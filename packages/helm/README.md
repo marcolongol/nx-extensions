@@ -1,11 +1,14 @@
-# helm
+# `@nx-extensions/helm`
 
-This library was generated with [Nx](https://nx.dev).
+First class support for Helm charts in Nx.
 
-## Building
+The Nx Plugin for Helm provides a set of executors, generators, and utilities to help you manage Helm charts in your Nx workspace.
 
-Run `nx build helm` to build the library.
+## Features
 
-## Running unit tests
-
-Run `nx test helm` to execute the unit tests via [Jest](https://jestjs.io).
+- Generate Helm charts for your applications
+- Lint Helm charts
+- Test Helm charts
+- Package Helm charts
+- Version Helm charts
+- Publish Helm charts
