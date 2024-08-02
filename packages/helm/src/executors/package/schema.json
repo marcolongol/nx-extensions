@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "PackageExecutorSchema",
+  "title": "Package executor schema",
+  "type": "object",
+  "properties": {
+    "chartFolder": {
+      "type": "string",
+      "description": "Folder where the chart is stored",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "default": "chart",
+      "x-prompt": "Provide the chart folder"
+    },
+    "outputFolder": {
+      "type": "string",
+      "description": "Folder to store the packaged chart",
+      "$default": {
+        "$source": "argv",
+        "index": 1
+      },
+      "default": "package",
+      "x-prompt": "Provide the output folder"
+    },
+    "publish": {
+      "type": "boolean",
+      "description": "Publish the chart to a repository",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "Publish the chart to a repository"
+    }
+  },
+  "required": ["chartFolder", "outputFolder"]
+}
