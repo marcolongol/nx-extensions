@@ -1,5 +1,9 @@
 {
   "generators": {
+    "chart": {
+      "factory": "./src/generators/chart/generator",
+      "schema": "./src/generators/chart/schema.json",
+      "description": "chart generator"
     }
   }
 }
