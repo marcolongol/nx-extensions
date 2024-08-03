@@ -2,6 +2,7 @@
   "root": true,
   "ignorePatterns": ["**/*"],
   "plugins": ["@nx"],
+  "extends": ["plugin:prettier/recommended"],
   "overrides": [
     {
       "files": "*.json",
@@ -10,6 +11,12 @@
     },
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "plugins": ["unused-imports", "sort-class-members"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:import/recommended",
+        "plugin:unicorn/recommended"
+      ],
       "rules": {
         "@nx/enforce-module-boundaries": [
           "error",
@@ -23,12 +30,62 @@
               }
             ]
           }
+        ],
+        "import/no-extraneous-dependencies": "off",
+        "import/order": [
+          "error",
+          {
+            "alphabetize": {
+              "caseInsensitive": false,
+              "order": "asc"
+            },
+            "groups": [
+              "builtin",
+              "external",
+              "internal",
+              ["parent", "sibling", "index"]
+            ],
+            "newlines-between": "always"
+          }
+        ],
+        "no-unused-vars": "warn",
+        "unused-imports/no-unused-imports": "error",
+        "unused-imports/no-unused-vars": [
+          "warn",
+          {
+            "vars": "all",
+            "varsIgnorePattern": "^_",
+            "args": "after-used",
+            "argsIgnorePattern": "^_"
+          }
+        ],
+        "sort-class-members/sort-class-members": [
+          2,
+          {
+            "order": [
+              "[static-properties]",
+              "[static-methods]",
+              "[conventional-private-properties]",
+              "[properties]",
+              "constructor",
+              "[methods]",
+              "[conventional-private-methods]"
+            ],
+            "accessorPairPositioning": "getThenSet"
+          }
         ]
       }
     },
     {
       "files": ["*.ts", "*.tsx"],
-      "extends": ["plugin:@nx/typescript"],
+      "extends": ["plugin:@nx/typescript", "plugin:import/typescript"],
+      "parserOptions": {
+        "project": [
+          "tsconfig.*?.json",
+          "packages/*/tsconfig.*?.json",
+          "libs/*/tsconfig.*?.json"
+        ]
+      },
       "rules": {}
     },
     {
