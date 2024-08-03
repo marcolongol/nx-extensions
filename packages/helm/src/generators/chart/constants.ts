@@ -1,4 +1,4 @@
-import { ChartGeneratorSchema } from './schema';
+import { ChartGeneratorSchema } from './schema.d';
 
 export const DEFAULT_OPTIONS: ChartGeneratorSchema = {
   name: 'chart',

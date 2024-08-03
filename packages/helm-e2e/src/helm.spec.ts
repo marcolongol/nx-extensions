@@ -1,6 +1,7 @@
-import { execSync } from 'child_process';
-import { join, dirname } from 'path';
-import { mkdirSync, rmSync } from 'fs';
+import { execSync } from 'node:child_process';
+import { mkdirSync, rmSync } from 'node:fs';
+import path from 'node:path';
+const { join, dirname } = path;
 
 describe('helm', () => {
   let workspaceDirectory: string;
@@ -41,7 +42,7 @@ describe('helm', () => {
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
-      }
+      },
     );
   });
 
@@ -55,6 +56,7 @@ describe('helm', () => {
 
 /**
  * Creates a test workspace with create-nx-workspace
+ *
  * @returns The directory where the test workspace was created
  */
 function createTestWorkspace() {
@@ -78,7 +80,7 @@ function createTestWorkspace() {
       cwd: dirname(workspaceDirectory),
       stdio: 'inherit',
       env: process.env,
-    }
+    },
   );
 
   console.log(`Created test workspace in "${workspaceDirectory}"`);
@@ -88,6 +90,7 @@ function createTestWorkspace() {
 
 /**
  * Creates a test project in the test workspace
+ *
  * @returns The directory where the test project was created
  */
 function createTestProject(workspaceDirectory: string) {
@@ -107,7 +110,7 @@ function createTestProject(workspaceDirectory: string) {
       cwd: workspaceDirectory,
       stdio: 'inherit',
       env: process.env,
-    }
+    },
   );
 
   console.log(`Created test project in "${projectDirectory}"`);

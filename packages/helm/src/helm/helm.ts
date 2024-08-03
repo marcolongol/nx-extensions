@@ -1,15 +1,11 @@
 import { getExecOutput } from '@actions/exec';
 
-/**
- * Abstract class for Helm
- */
+/** Abstract class for Helm */
 abstract class AbstractHelmClient {
   abstract package(): void;
 }
 
-/**
- * Options for packaging a chart
- */
+/** Options for packaging a chart */
 interface PackageOptions {
   chartFolder: string;
   outputFolder: string;
@@ -17,6 +13,7 @@ interface PackageOptions {
 
 /**
  * Decorator to ensure Helm is initialized before executing a method
+ *
  * @param {any} target
  * @param {string} propertyKey
  * @param {PropertyDescriptor} descriptor
@@ -25,37 +22,42 @@ interface PackageOptions {
 const ensureInitialized = (
   target: any,
   propertyKey: string,
-  descriptor: PropertyDescriptor
+  descriptor: PropertyDescriptor,
 ): PropertyDescriptor => {
   const originalMethod = descriptor.value;
 
-  descriptor.value = async function (...args: any[]) {
+  descriptor.value = async function (...arguments_: any[]) {
     if (!this.initialized) {
       await this.initialize();
     }
-    return originalMethod.apply(this, args);
+    return originalMethod.apply(this, arguments_);
   };
 
   return descriptor;
-}
+};
 
 /**
  * Create a new Helm client instance
+ *
  * @returns {HelmClient}
  */
-export const createHelmClient = (): HelmClient => {return new HelmClient();};
+export const createHelmClient = (): HelmClient => {
+  return new HelmClient();
+};
 
 /**
  * Helm wrapper class
- * @export
+ *
  * @class Helm
  * @extends {HelmAdapter}
+ * @export
  */
 export class HelmClient extends AbstractHelmClient {
   private initialized = false;
 
   /**
    * Package a chart directory into a chart archive
+   *
    * @param {PackageOptions} [options]
    */
   @ensureInitialized
@@ -74,6 +76,7 @@ export class HelmClient extends AbstractHelmClient {
 
   /**
    * Initialize Helm
+   *
    * @returns {Promise<void>}
    */
   public async initialize(): Promise<void> {

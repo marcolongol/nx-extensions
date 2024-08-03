@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
   displayName: 'helm-e2e',
   preset: '../../jest.preset.js',
@@ -7,6 +6,6 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/packages/helm-e2e',
-  globalSetup: '..\\..\\tools\\scripts\\start-local-registry.ts',
-  globalTeardown: '..\\..\\tools\\scripts\\stop-local-registry.ts',
+  globalSetup: String.raw`..\..\tools\scripts\start-local-registry.ts`,
+  globalTeardown: String.raw`..\..\tools\scripts\stop-local-registry.ts`,
 };

@@ -1,16 +1,18 @@
+import path from 'node:path';
+
 import {
   generateFiles,
   readProjectConfiguration,
   Tree,
   updateProjectConfiguration,
 } from '@nx/devkit';
-import * as path from 'path';
-import { ChartGeneratorSchema } from './schema';
+
 import { DEFAULT_OPTIONS } from './constants';
+import { ChartGeneratorSchema } from './schema.d';
 
 export async function chartGenerator(
   tree: Tree,
-  options: ChartGeneratorSchema
+  options: ChartGeneratorSchema,
 ) {
   options = { ...DEFAULT_OPTIONS, ...options };
 
@@ -34,9 +36,10 @@ export async function chartGenerator(
 
   generateFiles(
     tree,
+    // eslint-disable-next-line unicorn/prefer-module
     path.join(__dirname, 'files', 'chart'),
     path.join(project.root, options.chartFolder),
-    options
+    options,
   );
 }
 

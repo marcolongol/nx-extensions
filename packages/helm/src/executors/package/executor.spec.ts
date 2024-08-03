@@ -1,7 +1,7 @@
 import { ExecutorContext } from '@nx/devkit';
 
-import { PackageExecutorSchema } from './schema';
 import executor from './executor';
+import { PackageExecutorSchema } from './schema.d';
 
 const options: PackageExecutorSchema = {
   chartFolder: 'chart',

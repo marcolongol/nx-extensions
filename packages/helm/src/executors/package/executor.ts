@@ -1,11 +1,11 @@
-import { PromiseExecutor } from '@nx/devkit';
-import { ExecutorContext } from '@nx/devkit';
-import { PackageExecutorSchema } from './schema';
+import { PromiseExecutor, ExecutorContext } from '@nx/devkit';
+
+import { PackageExecutorSchema } from './schema.d';
 import { createHelmClient } from '../../helm/helm';
 
 const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
   options: PackageExecutorSchema,
-  context: ExecutorContext
+  context: ExecutorContext,
 ) => {
   const helm = createHelmClient();
 

@@ -1,13 +1,13 @@
-import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import {
   Tree,
   addProjectConfiguration,
   readProjectConfiguration,
 } from '@nx/devkit';
-import { DEFAULT_OPTIONS } from './constants';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
+import { DEFAULT_OPTIONS } from './constants';
 import { chartGenerator } from './generator';
-import { ChartGeneratorSchema } from './schema';
+import { ChartGeneratorSchema } from './schema.d';
 
 describe('chart generator', () => {
   let tree: Tree;
