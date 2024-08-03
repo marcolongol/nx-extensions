@@ -7,15 +7,12 @@ import {
   updateProjectConfiguration,
 } from '@nx/devkit';
 
-import { DEFAULT_OPTIONS } from './constants';
 import { ChartGeneratorSchema } from './schema.d';
 
 export async function chartGenerator(
   tree: Tree,
   options: ChartGeneratorSchema,
 ) {
-  options = { ...DEFAULT_OPTIONS, ...options };
-
   const project = readProjectConfiguration(tree, options.project);
 
   updateProjectConfiguration(tree, options.project, {
