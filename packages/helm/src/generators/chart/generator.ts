@@ -25,7 +25,8 @@ export async function chartGenerator(
         options: {
           chartFolder: `${project.root}/${options.chartFolder}`,
           outputFolder: '{workspaceRoot}/charts/{projectRoot}',
-          publish: false,
+          push: false,
+          remote: 'oci://localhost:5000/helm-charts',
         },
       },
     },

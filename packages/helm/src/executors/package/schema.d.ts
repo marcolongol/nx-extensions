@@ -9,7 +9,9 @@ export interface PackageExecutorSchema {
   chartFolder: string;
   /** Folder to store the packaged chart */
   outputFolder: string;
-  /** Publish the chart to a repository */
-  publish?: boolean;
+  /** Push the chart to a remote registry */
+  push?: boolean;
+  /** Remote registry to publish the chart */
+  remote?: string;
   [k: string]: unknown;
 }

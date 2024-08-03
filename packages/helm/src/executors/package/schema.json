@@ -24,14 +24,23 @@
       "default": "package",
       "x-prompt": "Provide the output folder"
     },
-    "publish": {
+    "push": {
       "type": "boolean",
-      "description": "Publish the chart to a repository",
+      "description": "Push the chart to a remote registry",
       "$default": {
         "$source": "argv",
-        "index": 0
+        "index": 2
       },
-      "x-prompt": "Publish the chart to a repository"
+      "x-prompt": "Provide the remote registry"
+    },
+    "remote": {
+      "type": "string",
+      "description": "Remote registry to publish the chart",
+      "$default": {
+        "$source": "argv",
+        "index": 3
+      },
+      "x-prompt": "Provide the remote registry"
     }
   },
   "required": ["chartFolder", "outputFolder"]

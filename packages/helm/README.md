@@ -6,9 +6,9 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 
 ## Features
 
-- Generate Helm charts for your applications
-- Lint Helm charts
-- Test Helm charts
-- Package Helm charts
-- Version Helm charts
-- Publish Helm charts
+- [x] Generate Helm charts for your applications
+- [ ] Lint Helm charts
+- [ ] Test Helm charts
+- [ ] Version Helm charts
+- [x] Package Helm charts
+- [x] Publish Helm charts

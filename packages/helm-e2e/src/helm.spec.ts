@@ -52,6 +52,13 @@ describe('helm', () => {
       stdio: 'inherit',
     });
   });
+
+  it('should package and push a chart', () => {
+    execSync(`nx run test-project:helm --push`, {
+      cwd: workspaceDirectory,
+      stdio: 'inherit',
+    });
+  });
 });
 
 /**

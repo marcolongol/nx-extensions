@@ -11,6 +11,12 @@ interface PackageOptions {
   outputFolder: string;
 }
 
+/** Options for pushing a chart */
+interface PushOptions {
+  chartPath: string;
+  remote: string;
+}
+
 /**
  * Decorator to ensure Helm is initialized before executing a method
  *
@@ -61,7 +67,8 @@ export class HelmClient extends AbstractHelmClient {
    * @param {PackageOptions} [options]
    */
   @ensureInitialized
-  public async package(options?: PackageOptions): Promise<void> {
+  public async package(options?: PackageOptions): Promise<string> {
+    let chartPath = undefined;
     await getExecOutput('helm', [
       'package',
       options.chartFolder,
@@ -70,6 +77,28 @@ export class HelmClient extends AbstractHelmClient {
     ]).then((output) => {
       if (output.stderr.length > 0 && output.exitCode !== 0) {
         throw new Error(`Failed to package chart: ${output.stderr}`);
+      }
+      const stdout = output.stdout;
+      const match = stdout.match(
+        /Successfully packaged chart and saved it to: (.+)/,
+      );
+      if (!match) {
+        throw new Error('Failed to parse chart path from helm output');
+      }
+      chartPath = match[1].trim();
+    });
+    return chartPath;
+  }
+
+  @ensureInitialized
+  public async push(options?: PushOptions): Promise<void> {
+    await getExecOutput('helm', [
+      'push',
+      options.chartPath,
+      options.remote,
+    ]).then((output) => {
+      if (output.stderr.length > 0 && output.exitCode !== 0) {
+        throw new Error(`Failed to push chart: ${output.stderr}`);
       }
     });
   }

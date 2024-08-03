@@ -9,10 +9,17 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
 ) => {
   const helm = createHelmClient();
 
-  await helm.package({
+  const chartPath = await helm.package({
     chartFolder: options.chartFolder,
     outputFolder: options.outputFolder,
   });
+
+  if (options.push) {
+    await helm.push({
+      chartPath: chartPath,
+      remote: options.remote,
+    });
+  }
 
   return {
     success: true,
