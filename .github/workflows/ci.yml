@@ -53,4 +53,5 @@ jobs:
       - run: npx nx format:check
       - run: npx nx affected -t test --verbose --parallel 3
       - run: npx nx affected -t lint --verbose --parallel 3
+      - run: npx nx affected -t e2e --verbose --parallel 3
       - run: npx nx affected -t build --verbose --parallel 3
