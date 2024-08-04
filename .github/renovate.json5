@@ -1,0 +1,8 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>marcolongol/renovate-config:default.json5",
+    "github>marcolongol/renovate-config:automerge-minor.json5"
+  ],
+  "gitAuthor": "marcolongol-bot <166586793+marcolongol-bot[bot]@users.noreply.github.com>"
+}
