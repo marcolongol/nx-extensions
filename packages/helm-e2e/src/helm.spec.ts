@@ -1,13 +1,23 @@
 import { execSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
+
 const { join, dirname } = path;
+import { GenericContainer, StartedTestContainer } from 'testcontainers';
 
 describe('helm', () => {
   let workspaceDirectory: string;
   let projectDirectory: string;
+  let registryContainer: StartedTestContainer;
 
-  beforeAll(() => {
+  beforeAll(async () => {
+    registryContainer = await new GenericContainer('registry:2.7')
+      .withExposedPorts({
+        container: 5000,
+        host: 5000,
+      })
+      .start();
+
     workspaceDirectory = createTestWorkspace();
     projectDirectory = createTestProject(workspaceDirectory);
 
@@ -18,15 +28,16 @@ describe('helm', () => {
       stdio: 'inherit',
       env: process.env,
     });
-  });
+  }, 120_000);
 
-  afterAll(() => {
+  afterAll(async () => {
+    await registryContainer.stop();
     // Cleanup the test project
     rmSync(workspaceDirectory, {
       recursive: true,
       force: true,
     });
-  });
+  }, 120_000);
 
   it('should be installed', () => {
     // npm ls will fail if the package is not installed properly
