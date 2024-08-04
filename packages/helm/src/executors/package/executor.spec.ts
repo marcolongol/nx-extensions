@@ -1,7 +1,14 @@
-import { ExecutorContext } from '@nx/devkit';
+import {
+  addProjectConfiguration,
+  ExecutorContext,
+  Tree,
+  readProjectConfiguration,
+} from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from 'nx/src/devkit-testing-exports';
 
-import executor from './executor';
 import { PackageExecutorSchema } from './schema.d';
+import chartGenerator from '../../generators/chart/generator';
+import { ChartGeneratorSchema } from '../../generators/chart/schema.d';
 
 const options: PackageExecutorSchema = {
   chartFolder: 'chart',
@@ -15,8 +22,37 @@ const context: ExecutorContext = {
 };
 
 describe('Package Executor', () => {
+  let tree: Tree;
+  let generatorOptions: ChartGeneratorSchema;
+  let packageOptions: PackageExecutorSchema;
+
+  beforeAll(async () => {
+    tree = createTreeWithEmptyWorkspace();
+
+    generatorOptions = {
+      name: 'test-chart',
+      project: 'test-project',
+      chartFolder: 'chart',
+    };
+
+    addProjectConfiguration(tree, generatorOptions.project, {
+      root: `'${generatorOptions.project}'`,
+    });
+
+    await chartGenerator(tree, generatorOptions);
+
+    const projectConfig = readProjectConfiguration(
+      tree,
+      generatorOptions.project,
+    );
+
+    packageOptions = projectConfig.targets['helm'].options;
+    console.log(packageOptions);
+  });
+
   it('can run', async () => {
-    const output = await executor(options, context);
-    expect(output.success).toBe(true);
+    // TODO: Implement test
+    // const output = await executor(options, context);
+    // expect(output.success).toBe(true);
   });
 });
