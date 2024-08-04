@@ -1,6 +1,9 @@
 import path from 'node:path';
+import { TextEncoder, TextDecoder } from 'node:util';
 
-export default {
+import { Config } from 'jest';
+
+const config: Config = {
   displayName: 'helm-e2e',
   preset: '../../jest.preset.js',
   transform: {
@@ -8,6 +11,10 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/packages/helm-e2e',
+  globals: {
+    TextEncoder: TextEncoder,
+    TextDecoder: TextDecoder,
+  },
   globalSetup: path.join(
     // eslint-disable-next-line unicorn/prefer-module
     __dirname,
@@ -27,3 +34,5 @@ export default {
     'stop-local-registry.ts',
   ),
 };
+
+export default config;
