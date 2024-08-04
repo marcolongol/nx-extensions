@@ -1,6 +1,6 @@
 /**
- * This script starts a local registry for e2e testing purposes.
- * It is meant to be called in jest's globalSetup.
+ * This script starts a local registry for e2e testing purposes. It is meant to
+ * be called in jest's globalSetup.
  */
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
 import { execFileSync } from 'child_process';
@@ -28,6 +28,7 @@ export default async () => {
       skipLockFileUpdate: true,
     },
   });
+
   await releasePublish({
     tag: 'e2e',
     firstRelease: true,
