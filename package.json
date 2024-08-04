@@ -22,7 +22,7 @@
     "@swc/core": "~1.7.0",
     "@swc/helpers": "~0.5.11",
     "@types/jest": "^29.4.0",
-    "@types/node": "18.19.43",
+    "@types/node": "20.14.14",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
     "eslint": "~8.57.0",
