@@ -57,14 +57,14 @@ jobs:
         shell: bash
 
       - name: Build packages
-        run: npx nx build --with-deps --skip-nx-cache --parallel --maxParallel=3 --configuration=production
+        run: npx nx run-many --target build --parallel 3 --configuration production --verbose
 
       - name: Publish packages
         run: |
           if [ ${{env.DRY_RUN}} == true ]; then
-            npx nx release publish --dryRun --projects ${{env.PROJECTS}}
+            npx nx release publish --dryRun --projects ${{env.PROJECTS}} --verbose
           else
-            npx nx release publish --projects ${{env.PROJECTS}}
+            npx nx release publish --projects ${{env.PROJECTS}} --verbose
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
