@@ -45,8 +45,21 @@
   },
   "release": {
     "projects": ["packages/helm"],
+    "projectsRelationship": "independent",
+    "changelog": {
+      "projectChangelogs": {
+        "createRelease": "github",
+        "renderOptions": {
+          "authors": true,
+          "mapAuthorsToGitHubUserNames": true,
+          "commitReferences": true,
+          "versionTitleDate": true
+        }
+      }
+    },
     "version": {
-      "preVersionCommand": "npx nx run-many -t build"
+      "preVersionCommand": "npx nx run-many -t build",
+      "conventionalCommits": true
     }
   }
 }
