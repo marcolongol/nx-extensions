@@ -38,8 +38,25 @@ describe('chart generator', () => {
     expect(tree.exists(`${projectConfig.root}/chart/Chart.yaml`)).toBe(true);
   });
 
+  it('should throw an error if the project already has a helm target', async () => {
+    try {
+      await chartGenerator(tree, options);
+    } catch (error) {
+      expect(error.message).toBe(
+        `Project ${options.project} already has a helm target. Please remove it before running this command.`,
+      );
+    }
+  });
+
   it('should create the chart in a custom folder', async () => {
-    options = { ...options, chartFolder: 'custom-folder' };
+    options = {
+      ...options,
+      project: 'test-project-custom-folder',
+      chartFolder: 'custom-folder',
+    };
+    addProjectConfiguration(tree, options.project, {
+      root: `'${options.project}'`,
+    });
     await chartGenerator(tree, options);
     const projectConfig = readProjectConfiguration(tree, options.project);
     expect(tree.exists(`${projectConfig.root}/custom-folder/Chart.yaml`)).toBe(
