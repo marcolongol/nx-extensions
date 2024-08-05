@@ -15,6 +15,12 @@ export async function chartGenerator(
 ) {
   const project = readProjectConfiguration(tree, options.project);
 
+  if (project.targets?.helm) {
+    throw new Error(
+      `Project ${options.project} already has a helm target. Please remove it before running this command.`,
+    );
+  }
+
   updateProjectConfiguration(tree, options.project, {
     ...project,
     targets: {
