@@ -4,8 +4,22 @@ name: Publish
 
 on:
   push:
+    branches:
+      - main
     tags:
-      - v*.*.*
+      - '*@*'
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        type: boolean
+        description: Dry Run
+        default: false
+        required: false
+      projects:
+        type: string
+        description: Projects to publish
+        default: ''
+        required: false
 
 jobs:
   test:
@@ -29,11 +43,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Parse project name from git tag if not provided
+        run: |
+          if [ -z "${{ inputs.projects }}" ]; then
+            export PROJECTS=$(echo ${{ github.ref }} | cut -d'@' -f1)
+          else
+            export PROJECTS=${{ inputs.projects }}
+          fi
+        shell: bash
+
       - name: Print Environment Info
         run: npx nx report
         shell: bash
 
       - name: Publish packages
-        run: npx nx release publish
+        run: |
+          if [ ${{env.DRY_RUN}} == true ]; then
+            npx nx release publish --dryRun --projects ${{env.PROJECTS}}
+          else
+            npx nx release publish --projects ${{env.PROJECTS}}
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+          DRY_RUN: ${{ inputs.dryRun }}
+          PROJECTS: ${{ env.PROJECTS }}
