@@ -1,3 +1,15 @@
+## 0.3.0 (2024-08-05)
+
+
+### 🚀 Features
+
+- **helm:** add repository information to `packages.json` ([82f1c9b](https://github.com/marcolongol/nx-extensions/commit/82f1c9b))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.2.0 (2024-08-05)
 
 
