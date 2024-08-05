@@ -1,3 +1,15 @@
+## 0.2.0 (2024-08-05)
+
+
+### 🚀 Features
+
+- **helm:** abort chart generation if target is already defined ([ac15994](https://github.com/marcolongol/nx-extensions/commit/ac15994))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.1.0 (2024-08-05)
 
 
