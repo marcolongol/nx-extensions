@@ -31,6 +31,5 @@ export default async () => {
 
   await releasePublish({
     tag: 'e2e',
-    firstRelease: true,
   });
 };
