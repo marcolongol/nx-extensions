@@ -19,6 +19,7 @@ describe('chart generator', () => {
       name: 'test-chart',
       project: 'test-project',
       chartFolder: 'chart',
+      skipFormat: true,
     };
 
     addProjectConfiguration(tree, options.project, {
