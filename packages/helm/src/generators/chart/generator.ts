@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import {
+  formatFiles,
   generateFiles,
   readProjectConfiguration,
   Tree,
@@ -45,6 +46,8 @@ export async function chartGenerator(
     path.join(project.root, options.chartFolder),
     options,
   );
+
+  await formatFiles(tree);
 }
 
 export default chartGenerator;
