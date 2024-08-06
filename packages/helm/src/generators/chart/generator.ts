@@ -47,7 +47,9 @@ export async function chartGenerator(
     options,
   );
 
-  await formatFiles(tree);
+  if (!options.skipFormat) {
+    await formatFiles(tree);
+  }
 }
 
 export default chartGenerator;
