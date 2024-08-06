@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@nx-extensions/core": ["libs/core/src/index.ts"],
       "helm": ["packages/helm/src/index.ts"]
     }
   },

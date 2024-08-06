@@ -44,7 +44,7 @@
     }
   },
   "release": {
-    "projects": ["packages/helm"],
+    "projects": ["packages/*", "libs/*", "!*e2e*"],
     "projectsRelationship": "independent",
     "changelog": {
       "projectChangelogs": {
@@ -61,5 +61,13 @@
       "preVersionCommand": "npx nx run-many -t build",
       "conventionalCommits": true
     }
-  }
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "eslint:lint"
+      }
+    }
+  ]
 }
