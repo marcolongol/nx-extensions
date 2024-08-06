@@ -1,3 +1,17 @@
+## 0.4.0 (2024-08-06)
+
+
+### 🚀 Features
+
+- **helm:** add repository information to `packages.json` ([92e4dee](https://github.com/marcolongol/nx-extensions/commit/92e4dee))
+
+- **helm:** add `formatFiles` to `chart` generator ([5e6cee9](https://github.com/marcolongol/nx-extensions/commit/5e6cee9))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.3.0 (2024-08-05)
 
 
