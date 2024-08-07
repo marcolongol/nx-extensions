@@ -1,3 +1,24 @@
+## 0.2.0 (2024-08-07)
+
+
+### 🚀 Features
+
+- **core:** bootstrap `@nx-extensions/core` library ([96b3044](https://github.com/marcolongol/nx-extensions/commit/96b3044))
+
+- **core:** port helm wrapper code to `@nx-extensions/core` ([1c800a2](https://github.com/marcolongol/nx-extensions/commit/1c800a2))
+
+- **core:** add `addToPrettierIgnore` util function ([4e42392](https://github.com/marcolongol/nx-extensions/commit/4e42392))
+
+
+### 🩹 Fixes
+
+- **core:** add `publishConfig` to `package.json` ([ccca913](https://github.com/marcolongol/nx-extensions/commit/ccca913))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.1.0 (2024-08-07)
 
 
