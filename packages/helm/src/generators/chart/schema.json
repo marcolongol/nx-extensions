@@ -32,14 +32,14 @@
       "default": "chart",
       "x-prompt": "Provide the chart folder"
     },
-    "skipFormat": {
+    "format": {
       "type": "boolean",
       "description": "Skip formatting the chart",
       "$default": {
         "$source": "argv",
         "index": 3
       },
-      "default": true,
+      "default": false,
       "x-prompt": "Skip formatting the generated chart?"
     }
   },
