@@ -1,3 +1,25 @@
+## 0.6.0 (2024-08-07)
+
+
+### 🚀 Features
+
+- **helm:** use helm wrapper from `@nx-extensions/core` ([2e5be3f](https://github.com/marcolongol/nx-extensions/commit/2e5be3f))
+
+
+### 🩹 Fixes
+
+- **helm:** use `format` instead of `skipFormat` and default to false ([ca8d6f6](https://github.com/marcolongol/nx-extensions/commit/ca8d6f6))
+
+
+### 🧱 Updated Dependencies
+
+- Updated core to 0.2.0
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.5.0 (2024-08-07)
 
 
