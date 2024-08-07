@@ -1,6 +1,6 @@
 {
   "name": "@nx-extensions/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "dependencies": {
     "@actions/exec": "^1.1.1",
     "@nx/devkit": "19.5.6",

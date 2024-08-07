@@ -1,3 +1,29 @@
+## 0.5.0 (2024-08-07)
+
+
+### 🚀 Features
+
+- **helm:** add `formatFiles` to `chart` generator ([bc62dd2](https://github.com/marcolongol/nx-extensions/commit/bc62dd2))
+
+- **helm:** add `skipFormat` option to `chart` generator ([5e54ca8](https://github.com/marcolongol/nx-extensions/commit/5e54ca8))
+
+- **helm:** use helm wrapper from `@nx-extensions/core` ([038e978](https://github.com/marcolongol/nx-extensions/commit/038e978))
+
+
+### 🩹 Fixes
+
+- **helm:** use `format` instead of `skipFormat` and default to false ([cb66233](https://github.com/marcolongol/nx-extensions/commit/cb66233))
+
+
+### 🧱 Updated Dependencies
+
+- Updated core to 0.1.0
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.4.0 (2024-08-06)
 
 
