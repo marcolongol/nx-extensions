@@ -1,6 +1,10 @@
 {
   "name": "@nx-extensions/core",
   "version": "0.1.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@actions/exec": "^1.1.1",
     "@nx/devkit": "19.5.6",
@@ -9,6 +13,5 @@
   },
   "type": "commonjs",
   "main": "./src/index.js",
-  "typings": "./src/index.d.ts",
-  "private": false
+  "typings": "./src/index.d.ts"
 }
