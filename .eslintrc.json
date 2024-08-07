@@ -74,6 +74,21 @@
             "accessorPairPositioning": "getThenSet"
           }
         ]
+      },
+      "settings": {
+        "import/parsers": {
+          "@typescript-eslint/parser": [".ts", ".tsx"]
+        },
+        "import/resolver": {
+          "typescript": {
+            "alwaysTryTypes": true,
+            "project": [
+              "tsconfig.*?.json",
+              "packages/*/tsconfig.*?.json",
+              "libs/*/tsconfig.*?.json"
+            ]
+          }
+        }
       }
     },
     {
