@@ -12,8 +12,10 @@
   },
   "dependencies": {
     "@nx-extensions/core": "0.2.0",
-    "@nx/devkit": "19.5.7",
     "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@nx/devkit": "19.5.7"
   },
   "type": "commonjs",
   "main": "./src/index.js",
