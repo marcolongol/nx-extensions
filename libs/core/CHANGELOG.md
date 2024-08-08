@@ -1,3 +1,17 @@
+## 0.2.1 (2024-08-08)
+
+
+### 🩹 Fixes
+
+- **core:** add `publishConfig` to `package.json` ([954eb70](https://github.com/marcolongol/nx-extensions/commit/954eb70))
+
+- **deps:** update nrwl monorepo to v19.5.7 ([7c04f5e](https://github.com/marcolongol/nx-extensions/commit/7c04f5e))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.2.0 (2024-08-07)
 
 

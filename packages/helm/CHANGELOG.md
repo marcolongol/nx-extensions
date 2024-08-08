@@ -1,3 +1,26 @@
+## 0.6.1 (2024-08-08)
+
+
+### 🩹 Fixes
+
+- **deps:** update nrwl monorepo to v19.5.7 ([7c04f5e](https://github.com/marcolongol/nx-extensions/commit/7c04f5e))
+
+- **helm:** move `@nx/devkit` to `peerDependencies` ([65a06b4](https://github.com/marcolongol/nx-extensions/commit/65a06b4))
+
+- **helm:** use `{workspaceRoot}/dist/charts/{projectRoot}` as default output folder ([0a41aef](https://github.com/marcolongol/nx-extensions/commit/0a41aef))
+
+- **helm:** fix `format` option description and prompt ([8120f6d](https://github.com/marcolongol/nx-extensions/commit/8120f6d))
+
+
+### 🧱 Updated Dependencies
+
+- Updated core to 0.2.1
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.6.0 (2024-08-07)
 
 
