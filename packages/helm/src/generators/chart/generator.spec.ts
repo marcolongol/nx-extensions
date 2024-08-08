@@ -76,7 +76,7 @@ describe('chart generator', () => {
     ]);
     expect(projectConfig.targets['helm'].options).toEqual({
       chartFolder: `${projectConfig.root}/${options.chartFolder}`,
-      outputFolder: '{workspaceRoot}/charts/{projectRoot}',
+      outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
       push: false,
       remote: 'oci://localhost:5000/helm-charts',
     });
