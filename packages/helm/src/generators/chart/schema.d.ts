@@ -11,7 +11,7 @@ export interface ChartGeneratorSchema {
   project: string;
   /** Folder to store the chart */
   chartFolder?: string;
-  /** Skip formatting the chart */
+  /** Format the generated chart */
   format?: boolean;
   [k: string]: unknown;
 }
