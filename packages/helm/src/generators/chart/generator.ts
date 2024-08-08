@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   formatFiles,
   generateFiles,
+  logger,
   readProjectConfiguration,
   Tree,
   updateProjectConfiguration,
@@ -50,6 +51,11 @@ export async function chartGenerator(
   if (options.format) {
     await formatFiles(tree);
   }
+
+  // TODO: can we do this programmatically?
+  logger.warn(
+    `Add ${project.root}/${options.chartFolder} to .prettierignore to avoid Helm chart syntax errors.`,
+  );
 }
 
 export default chartGenerator;
