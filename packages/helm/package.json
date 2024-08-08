@@ -1,6 +1,6 @@
 {
   "name": "@nx-extensions/helm",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -11,7 +11,7 @@
     "directory": "packages/helm"
   },
   "dependencies": {
-    "@nx-extensions/core": "0.2.0",
+    "@nx-extensions/core": "0.2.1",
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
