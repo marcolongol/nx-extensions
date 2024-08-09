@@ -15,6 +15,10 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 
 ## Getting Started
 
+## Prerequisites
+
+Before you can use the Nx Plugin for Helm, you need to have Helm installed on your machine. You can install Helm by following the instructions [here](https://helm.sh/docs/intro/install/).
+
 ### Install the Nx Plugin for Helm
 
 To get started with the Nx Plugin for Helm, run the following command:
@@ -31,14 +35,66 @@ To get started with the Nx Plugin for Helm, run the following command:
 nx g @nx-extensions/helm:chart --name=my-chart --project=my-app
 ```
 
-This will generate a new Helm chart for your project under the `chart` directory and configure the helm target in your project `project.json` file.
+This will generate a new Helm chart for your project under `{projectRoot}/chart` directory and configure the helm target in your project `project.json` file.
+
+```json
+{
+  "name": "my-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/my-app/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    [...]
+    "helm": {
+      "executor": "@nx-extensions/helm:package",
+      "outputs": ["{options.outputFolder}"],
+      "options": {
+        "chartFolder": "apps/test-project/chart",
+        "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
+        "push": false,
+        "remote": "oci://localhost:5000/helm-charts"
+      }
+    }
+  }
+}
+```
 
 ### Build and package your Helm chart
 
-To build and package your Helm chart, run the following command:
+To build and package your Helm chart, you can use the nx run to execute the target defined in your project:
 
 ```bash
 nx run my-app:helm
 ```
 
-This will build and package your Helm chart and output the packaged chart in the `charts` directory under the workspace root.
+This will build and package your Helm chart and output the packaged chart in the `dist/charts` directory under the workspace root.
+
+### Publish your Helm chart
+
+By default the executor options will default to `push: false` and `remote: oci://localhost:5000/helm-charts`. To publish your Helm chart to a custom registry, update the `project.json` file with the desired remote and set `push: true`. The chart will be pushed automatically to the defined registry after it gets packaged.
+
+```diff
+{
+  "name": "my-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/my-app/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    [...]
+    "helm": {
+      "executor": "@nx-extensions/helm:package",
+      "outputs": ["{options.outputFolder}"],
+      "options": {
+        "chartFolder": "apps/test-project/chart",
+        "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
+--      "push": false,
+++      "push": true,
+--      "remote": "oci://localhost:5000/helm-charts"
+++      "remote": "oci://localhost:5000/my-charts"
+      }
+    }
+  }
+}
+```
