@@ -1,3 +1,19 @@
+## 0.6.2 (2024-08-09)
+
+
+### 🩹 Fixes
+
+- **helm:** move `@nx/devkit` to `peerDependencies` ([68e2ab1](https://github.com/marcolongol/nx-extensions/commit/68e2ab1))
+
+- **helm:** use `{workspaceRoot}/dist/charts/{projectRoot}` as default output folder ([221387a](https://github.com/marcolongol/nx-extensions/commit/221387a))
+
+- **helm:** fix `format` option description and prompt ([78a1b0f](https://github.com/marcolongol/nx-extensions/commit/78a1b0f))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.6.1 (2024-08-08)
 
 
