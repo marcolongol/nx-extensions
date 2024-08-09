@@ -5,6 +5,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcolongol/nx-extensions/tree/main/libs/core",
+    "directory": "libs/core"
+  },
   "dependencies": {
     "@actions/exec": "^1.1.1",
     "@nx/devkit": "19.5.7",
