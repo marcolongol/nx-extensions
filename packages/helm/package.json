@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/marcolongol/nx-extensions",
+    "url": "https://github.com/marcolongol/nx-extensions/tree/main/packages/helm",
     "directory": "packages/helm"
   },
   "dependencies": {
