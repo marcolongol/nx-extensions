@@ -3,8 +3,8 @@
  * be called in jest's globalSetup.
  */
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
-import { execFileSync } from 'child_process';
 import { releasePublish, releaseVersion } from 'nx/release';
+import { getExecOutput } from '@actions/exec';
 
 export default async () => {
   // local registry target to run
@@ -28,6 +28,15 @@ export default async () => {
       skipLockFileUpdate: true,
     },
   });
+
+  // Build all the projects with the new e2e version
+  const { stdout: buildOutput } = await getExecOutput('nx', [
+    'run-many',
+    '--target=build',
+    '--all',
+  ]);
+
+  console.log(buildOutput);
 
   await releasePublish({
     tag: 'e2e',
