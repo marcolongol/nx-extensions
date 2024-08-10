@@ -53,7 +53,11 @@ This will generate a new Helm chart for your project under `{projectRoot}/chart`
         "chartFolder": "apps/test-project/chart",
         "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
         "push": false,
-        "remote": "oci://localhost:5000/helm-charts"
+        "remote": "oci://localhost:5000/helm-charts",
+        "dependencies": {
+          "update": true,
+          "build": true
+        }
       }
     }
   }
@@ -62,13 +66,15 @@ This will generate a new Helm chart for your project under `{projectRoot}/chart`
 
 ### Build and package your Helm chart
 
-To build and package your Helm chart, you can use the nx run to execute the target defined in your project:
+To build and package your Helm chart, you can use the nx run command to execute the `helm` target defined in your project:
 
 ```bash
 nx run my-app:helm
 ```
 
-This will build and package your Helm chart and output the packaged chart in the `dist/charts` directory under the workspace root.
+This will build and package your Helm chart and output the packaged chart in the `dist/charts/{projectRoot}` directory under the workspace root.
+
+Optionally, you can tell the executor to update and/or build the chart dependencies by setting the `dependencies.update` and `dependencies.build` option to `true` or `false`. This is going to tell the executor to respectively run `helm dependency update` and/or `helm dependency build` before packaging the chart.
 
 ### Publish your Helm chart
 
@@ -93,6 +99,10 @@ By default the executor options will default to `push: false` and `remote: oci:/
 ++      "push": true,
 --      "remote": "oci://localhost:5000/helm-charts"
 ++      "remote": "oci://localhost:5000/my-charts"
+        "dependencies": {
+          "update": true,
+          "build": true
+        }
       }
     }
   }

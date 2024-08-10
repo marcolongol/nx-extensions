@@ -13,5 +13,21 @@ export interface PackageExecutorSchema {
   push?: boolean;
   /** Remote registry to publish the chart */
   remote?: string;
+  /** Options related to dependencies */
+  dependencies?: {
+    /** Runs `helm dependency update` before packaging */
+    update?: boolean;
+    /** Runs `helm dependency build` before packaging */
+    build?: boolean;
+    /** List of repositories to add with `helm repo add` before packaging */
+    repositories?: {
+      /** Name of the repository */
+      name?: string;
+      /** URL of the repository */
+      url?: string;
+      [k: string]: unknown;
+    }[];
+    [k: string]: unknown;
+  };
   [k: string]: unknown;
 }

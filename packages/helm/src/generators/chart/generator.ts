@@ -35,6 +35,11 @@ export async function chartGenerator(
           outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
           push: false,
           remote: 'oci://localhost:5000/helm-charts',
+          dependencies: {
+            update: true,
+            build: true,
+            repositories: [],
+          },
         },
       },
     },

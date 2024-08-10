@@ -41,6 +41,69 @@
         "index": 3
       },
       "x-prompt": "Provide the remote registry"
+    },
+    "dependencies": {
+      "type": "object",
+      "description": "Options related to dependencies",
+      "properties": {
+        "update": {
+          "type": "boolean",
+          "description": "Runs `helm dependency update` before packaging",
+          "$default": {
+            "$source": "argv",
+            "index": 4
+          },
+          "default": false,
+          "x-prompt": "Update dependencies before packaging?"
+        },
+        "build": {
+          "type": "boolean",
+          "description": "Runs `helm dependency build` before packaging",
+          "$default": {
+            "$source": "argv",
+            "index": 5
+          },
+          "default": false,
+          "x-prompt": "Build dependencies before packaging?"
+        },
+        "repositories": {
+          "type": "array",
+          "description": "List of repositories to add with `helm repo add` before packaging",
+          "$default": {
+            "$source": "argv",
+            "index": 6
+          },
+          "items": {
+            "type": "object",
+            "description": "Repository to add",
+            "$default": {
+              "$source": "argv",
+              "index": 7
+            },
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the repository",
+                "$default": {
+                  "$source": "argv",
+                  "index": 8
+                },
+                "x-prompt": "Provide the repository name"
+              },
+              "url": {
+                "type": "string",
+                "description": "URL of the repository",
+                "$default": {
+                  "$source": "argv",
+                  "index": 9
+                },
+                "x-prompt": "Provide the repository URL"
+              }
+            }
+          },
+          "x-prompt": "Add repositories before packaging?"
+        }
+      }
     }
   },
   "required": ["chartFolder", "outputFolder"]

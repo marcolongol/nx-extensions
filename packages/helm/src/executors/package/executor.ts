@@ -9,6 +9,20 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
 ) => {
   const helm = createHelmClient();
 
+  if (options.dependencies.repositories) {
+    for (const repository of options.dependencies.repositories) {
+      await helm.addRepository(repository.name, repository.url);
+    }
+  }
+
+  if (options.dependencies.update) {
+    await helm.dependencyUpdate(options.chartFolder);
+  }
+
+  if (options.dependencies.build) {
+    await helm.dependencyBuild(options.chartFolder);
+  }
+
   const chartPath = await helm.package({
     chartFolder: options.chartFolder,
     outputFolder: options.outputFolder,
