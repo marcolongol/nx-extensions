@@ -11,8 +11,7 @@
       "options": {
         "jestConfig": "packages/helm-e2e/jest.config.ts",
         "runInBand": true
-      },
-      "dependsOn": ["^build"]
+      }
     },
     "lint": {
       "executor": "@nx/eslint:lint"
