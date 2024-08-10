@@ -47,6 +47,41 @@ export class HelmClient extends AbstractHelmClient {
     });
   }
 
+  @ensureInitialized
+  public async dependencyUpdate(chartFolder: string): Promise<void> {
+    await getExecOutput('helm', ['dependency', 'update', chartFolder]).then(
+      (output) => {
+        if (output.stderr.length > 0 && output.exitCode !== 0) {
+          throw new Error(
+            `Failed to update chart dependencies: ${output.stderr}`,
+          );
+        }
+      },
+    );
+  }
+
+  @ensureInitialized
+  public async dependencyBuild(chartFolder: string): Promise<void> {
+    await getExecOutput('helm', ['dependency', 'build', chartFolder]).then(
+      (output) => {
+        if (output.stderr.length > 0 && output.exitCode !== 0) {
+          throw new Error(
+            `Failed to build chart dependencies: ${output.stderr}`,
+          );
+        }
+      },
+    );
+  }
+
+  @ensureInitialized
+  public async addRepository(name: string, url: string): Promise<void> {
+    await getExecOutput('helm', ['repo', 'add', name, url]).then((output) => {
+      if (output.stderr.length > 0 && output.exitCode !== 0) {
+        throw new Error(`Failed to add repository: ${output.stderr}`);
+      }
+    });
+  }
+
   /**
    * Initialize Helm
    *
