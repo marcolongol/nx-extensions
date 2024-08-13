@@ -7,6 +7,7 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 ## Features
 
 - [x] Generate Helm charts for your applications
+- [x] Add dependencies to your Helm charts
 - [ ] Lint Helm charts
 - [ ] Test Helm charts
 - [ ] Version Helm charts
@@ -56,13 +57,71 @@ This will generate a new Helm chart for your project under `{projectRoot}/chart`
         "remote": "oci://localhost:5000/helm-charts",
         "dependencies": {
           "update": true,
-          "build": true
+          "build": true,
+          "repositories": []
         }
       }
     }
   }
 }
 ```
+
+### Add a Dependency to your Helm chart
+
+You can also add a dependency to your Helm chart using the `@nx-extensions/helm:dependency` generator:
+
+```bash
+nx g @nx-extensions/helm:dependency --project=my-app --chartName=nginx --chartVersion=18.7.1 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami
+```
+
+This will add the dependency to your Helm chart in the `Chart.yaml` file and add a entry to the `repositories` array in the `project.json` file.
+
+#### Chart.yaml
+
+```yaml
+[...]
+dependencies:
+  - name: nginx
+    version: 18.1.7
+    repository: 'https://charts.bitnami.com/bitnami'
+```
+
+#### project.json
+
+```diff
+{
+  "name": "my-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/my-app/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    [...]
+    "helm": {
+      "executor": "@nx-extensions/helm:package",
+      "outputs": ["{options.outputFolder}"],
+      "options": {
+        "chartFolder": "apps/test-project/chart",
+        "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
+        "push": false,
+        "remote": "oci://localhost:5000/helm-charts",
+        "dependencies": {
+          "update": true,
+          "build": true,
+++        "repositories": [
+++          {
+++            "name": "bitnami",
+++            "url": "https://charts.bitnami.com/bitnami"
+++          }
+++        ]
+        }
+      }
+    }
+  }
+}
+```
+
+The package executor will automatically run `helm repo add` for each repository defined in the `repositories` array before packaging the chart.
 
 ### Build and package your Helm chart
 
@@ -102,6 +161,7 @@ By default the executor options will default to `push: false` and `remote: oci:/
         "dependencies": {
           "update": true,
           "build": true
+          "repositories": []
         }
       }
     }
