@@ -70,6 +70,23 @@ describe('helm', () => {
       stdio: 'inherit',
     });
   });
+
+  it('should add a dependency to a chart', () => {
+    execSync(
+      `nx generate @nx-extensions/helm:dependency --project=test-project --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami`,
+      {
+        cwd: workspaceDirectory,
+        stdio: 'inherit',
+      },
+    );
+  });
+
+  it('should package and push a chart with dependencies', () => {
+    execSync(`nx run test-project:helm --push`, {
+      cwd: workspaceDirectory,
+      stdio: 'inherit',
+    });
+  });
 });
 
 /**
