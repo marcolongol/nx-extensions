@@ -1,3 +1,15 @@
+## 0.3.0 (2024-08-13)
+
+
+### 🚀 Features
+
+- **core:** add helm utilities to handle chart dependencies ([35d28e1](https://github.com/marcolongol/nx-extensions/commit/35d28e1))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.2.1 (2024-08-08)
 
 
