@@ -1,3 +1,22 @@
+## 0.7.0 (2024-08-13)
+
+
+### 🚀 Features
+
+- **helm:** support chart dependencies update/build ([e4e4585](https://github.com/marcolongol/nx-extensions/commit/e4e4585))
+
+- **helm:** add `dependency` generator ([4a6fc29](https://github.com/marcolongol/nx-extensions/commit/4a6fc29))
+
+
+### 🧱 Updated Dependencies
+
+- Updated core to 0.3.0
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.6.2 (2024-08-09)
 
 
