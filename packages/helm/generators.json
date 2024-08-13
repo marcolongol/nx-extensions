@@ -4,6 +4,11 @@
       "factory": "./src/generators/chart/generator",
       "schema": "./src/generators/chart/schema.json",
       "description": "chart generator"
+    },
+    "dependency": {
+      "factory": "./src/generators/dependency/generator",
+      "schema": "./src/generators/dependency/schema.json",
+      "description": "dependency generator"
     }
   }
 }
