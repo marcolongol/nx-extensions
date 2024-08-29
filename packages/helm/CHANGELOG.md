@@ -1,3 +1,20 @@
+## 0.7.1 (2024-08-29)
+
+
+### 🩹 Fixes
+
+- **helm:** fix peer dep resolution ([0603a49](https://github.com/marcolongol/nx-extensions/commit/0603a49))
+
+
+### 🧱 Updated Dependencies
+
+- Updated core to 0.3.1
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo
+
 ## 0.7.0 (2024-08-13)
 
 

@@ -1,3 +1,15 @@
+## 0.3.1 (2024-08-29)
+
+
+### 🩹 Fixes
+
+- **core:** fix peer dep resolution ([3877259](https://github.com/marcolongol/nx-extensions/commit/3877259))
+
+
+### ❤️  Thank You
+
+- Lucas Marcolongo
+
 ## 0.3.0 (2024-08-13)
 
 
