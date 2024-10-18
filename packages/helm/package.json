@@ -16,7 +16,7 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@nx/devkit": "^19.6.4"
+    "@nx/devkit": "^19.6.4 || ^20.0.0"
   },
   "type": "commonjs",
   "main": "./src/index.js",
