@@ -24,7 +24,7 @@ describe('helm', () => {
     // The plugin has been built and published to a local registry in the jest globalSetup
     // Install the plugin built with the latest source code into the test repo
     execSync(`npm install @nx-extensions/helm@e2e`, {
-      cwd: projectDirectory,
+      cwd: workspaceDirectory,
       stdio: 'inherit',
       env: process.env,
     });
@@ -140,7 +140,7 @@ function createTestProject(workspaceDirectory: string) {
   });
 
   execSync(
-    `npx nx generate @nx/node:application ${projectName} --directory=apps --nxCloud=skip --no-interactive`,
+    `npx nx generate @nx/node:application ${projectName} --directory=apps/${projectName} --nxCloud=skip --no-interactive`,
     {
       cwd: workspaceDirectory,
       stdio: 'inherit',
