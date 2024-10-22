@@ -1,3 +1,18 @@
+# 1.0.0 (2024-10-22)
+
+### 🩹 Fixes
+
+- **helm:** fix tests ([022a434](https://github.com/marcolongol/nx-extensions/commit/022a434))
+- **helm:** fix peer dep resolution ([bc836db](https://github.com/marcolongol/nx-extensions/commit/bc836db))
+
+### 🧱 Updated Dependencies
+
+- Updated core to 1.0.0
+
+### ❤️  Thank You
+
+- Lucas Marcolongo @marcolongol
+
 ## 0.7.1 (2024-08-29)
 
 
