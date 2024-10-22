@@ -15,8 +15,18 @@ const options: PackageExecutorSchema = {
   outputFolder: 'chart',
   publish: false,
 };
+
 const context: ExecutorContext = {
   root: '',
+  projectsConfigurations: {
+    version: 1,
+    projects: {},
+  },
+  nxJsonConfiguration: {},
+  projectGraph: {
+    nodes: {},
+    dependencies: {},
+  },
   cwd: process.cwd(),
   isVerbose: false,
 };
