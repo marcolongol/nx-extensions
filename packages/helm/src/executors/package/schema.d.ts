@@ -13,6 +13,10 @@ export interface PackageExecutorSchema {
   push?: boolean;
   /** Remote registry to publish the chart */
   remote?: string;
+  /** Overwrite the version of the chart for packaging */
+  version?: string;
+  /** Overwrite the version of the application for packaging */
+  appVersion?: string;
   /** Options related to dependencies */
   dependencies?: {
     /** Runs `helm dependency update` before packaging */

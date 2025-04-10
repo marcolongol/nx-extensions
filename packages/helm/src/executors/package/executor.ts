@@ -26,6 +26,8 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
   const chartPath = await helm.package({
     chartFolder: options.chartFolder,
     outputFolder: options.outputFolder,
+    version: options.version,
+    appVersion: options.appVersion,
   });
 
   if (options.push) {

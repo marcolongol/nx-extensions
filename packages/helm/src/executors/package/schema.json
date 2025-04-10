@@ -42,6 +42,14 @@
       },
       "x-prompt": "Provide the remote registry"
     },
+    "version": {
+      "type": "string",
+      "description": "Overwrite the version of the chart for packaging"
+    },
+    "appVersion": {
+      "type": "string",
+      "description": "Overwrite the version of the application for packaging"
+    },
     "dependencies": {
       "type": "object",
       "description": "Options related to dependencies",

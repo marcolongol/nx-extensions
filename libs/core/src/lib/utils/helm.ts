@@ -18,6 +18,8 @@ export class HelmClient extends AbstractHelmClient {
       options.chartFolder,
       '-d',
       options.outputFolder,
+      ...(options.version ? ['--version', options.version] : []),
+      ...(options.appVersion ? ['--app-version', options.appVersion] : []),
     ]).then((output) => {
       if (output.stderr.length > 0 && output.exitCode !== 0) {
         throw new Error(`Failed to package chart: ${output.stderr}`);
