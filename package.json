@@ -20,7 +20,7 @@
     "@nx/workspace": "20.1.1",
     "@swc-node/register": "~1.10.0",
     "@swc/cli": "~0.7.0",
-    "@swc/core": "~1.12.0",
+    "@swc/core": "~1.13.0",
     "@swc/helpers": "~0.5.11",
     "@types/jest": "^29.4.0",
     "@types/js-yaml": "^4.0.9",
