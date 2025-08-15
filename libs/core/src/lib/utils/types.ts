@@ -11,6 +11,8 @@ export interface Initializable {
 export interface PackageOptions {
   chartFolder: string;
   outputFolder: string;
+  version?: string;
+  appVersion?: string;
 }
 
 /** Options for pushing a chart */
