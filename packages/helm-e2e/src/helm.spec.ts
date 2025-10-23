@@ -49,7 +49,7 @@ describe('helm', () => {
 
   it('should generate a chart', () => {
     execSync(
-      `nx generate @nx-extensions/helm:chart my-chart --project=test-project`,
+      `nx generate @nx-extensions/helm:chart --name=my-chart --project=test-project --no-interactive`,
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
@@ -73,7 +73,7 @@ describe('helm', () => {
 
   it('should add a dependency to a chart', () => {
     execSync(
-      `nx generate @nx-extensions/helm:dependency --project=test-project --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami`,
+      `nx generate @nx-extensions/helm:dependency --project=test-project --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami --no-interactive`,
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
