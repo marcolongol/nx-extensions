@@ -53,7 +53,7 @@
             "$source": "argv",
             "index": 4
           },
-          "default": false,
+          "default": true,
           "x-prompt": "Update dependencies before packaging?"
         },
         "build": {
