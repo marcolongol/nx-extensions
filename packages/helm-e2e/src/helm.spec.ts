@@ -53,8 +53,15 @@ describe('helm', () => {
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
+        env: { ...process.env, NX_DAEMON: 'false' },
       },
     );
+
+    // Reset Nx cache after modifying project configuration
+    execSync('nx reset', {
+      cwd: workspaceDirectory,
+      stdio: 'inherit',
+    });
   });
 
   it('should package a chart', () => {
@@ -77,8 +84,15 @@ describe('helm', () => {
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
+        env: { ...process.env, NX_DAEMON: 'false' },
       },
     );
+
+    // Reset Nx cache after modifying project configuration
+    execSync('nx reset', {
+      cwd: workspaceDirectory,
+      stdio: 'inherit',
+    });
   });
 
   it('should package and push a chart with dependencies', () => {
