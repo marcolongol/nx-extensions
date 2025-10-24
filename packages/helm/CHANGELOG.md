@@ -1,3 +1,17 @@
+## 1.0.1 (2025-10-24)
+
+### 🩹 Fixes
+
+- **helm-e2e:** fix tests (disable nx daemon & update dependencies by default) ([5d5d1ef](https://github.com/marcolongol/nx-extensions/commit/5d5d1ef))
+
+### 🧱 Updated Dependencies
+
+- Updated core to 1.0.1
+
+### ❤️ Thank You
+
+- Lucas Marcolongo @marcolongol
+
 # 1.0.0 (2024-10-22)
 
 ### 🩹 Fixes
