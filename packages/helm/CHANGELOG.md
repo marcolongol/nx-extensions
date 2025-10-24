@@ -1,3 +1,17 @@
+## 1.1.0 (2025-10-24)
+
+### 🚀 Features
+
+- **helm:** Support overwriting chart version and app version ([94b7645](https://github.com/marcolongol/nx-extensions/commit/94b7645))
+
+### 🧱 Updated Dependencies
+
+- Updated core to 1.0.2
+
+### ❤️ Thank You
+
+- Ian Serpa
+
 ## 1.0.1 (2025-10-24)
 
 ### 🩹 Fixes
