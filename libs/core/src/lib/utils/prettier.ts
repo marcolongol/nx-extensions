@@ -12,7 +12,6 @@ export async function resolveUserExistingPrettierConfig(): Promise<
 > {
   let prettier: typeof import('prettier');
   try {
-    // eslint-disable-next-line unicorn/prefer-module
     prettier = require('prettier');
   } catch {
     return undefined;

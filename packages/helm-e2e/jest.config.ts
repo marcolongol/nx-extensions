@@ -16,7 +16,6 @@ const config: Config = {
     TextDecoder: TextDecoder,
   },
   globalSetup: path.join(
-    // eslint-disable-next-line unicorn/prefer-module
     __dirname,
     '..',
     '..',
@@ -25,7 +24,6 @@ const config: Config = {
     'start-local-registry.ts',
   ),
   globalTeardown: path.join(
-    // eslint-disable-next-line unicorn/prefer-module
     __dirname,
     '..',
     '..',
