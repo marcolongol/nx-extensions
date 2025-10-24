@@ -62,6 +62,8 @@ jobs:
           connect-token: ${{ env.OP_CONNECT_TOKEN }}
 
       - uses: 1password/load-secrets-action@13f58eec611f8e5db52ec16247f58c508398f3e6 # v3
+        with:
+          export-env: true
         env:
           BOT_APP_ID: op://homelab/GITHUB/GITHUB_APP_ID
           BOT_APP_PRIVATE_KEY: op://homelab/GITHUB/GITHUB_APP_PRIVATE_KEY
