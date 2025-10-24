@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "@nx-extensions/source",
   "version": "0.0.0",
   "license": "MIT",
@@ -33,7 +34,6 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-sort-class-members": "^1.20.0",
-    "eslint-plugin-unicorn": "^56.0.0",
     "eslint-plugin-unused-imports": "^4.0.0",
     "jest": "30.2.0",
     "jest-environment-jsdom": "30.2.0",

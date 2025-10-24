@@ -47,7 +47,6 @@ export async function chartGenerator(
 
   generateFiles(
     tree,
-    // eslint-disable-next-line unicorn/prefer-module
     path.join(__dirname, 'files', 'chart'),
     path.join(project.root, options.chartFolder),
     options,
