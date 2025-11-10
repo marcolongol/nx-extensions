@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@actions/exec": "^1.1.1",
-    "@nx/devkit": "22.0.2",
+    "@nx/devkit": "22.0.3",
     "prettier": "^3.0.0",
     "tslib": "^2.3.0"
   },
