@@ -46,7 +46,7 @@
     "prettier-plugin-organize-attributes": "^1.0.0",
     "prettier-plugin-package": "^1.4.0",
     "testcontainers": "^10.11.0",
-    "ts-jest": "29.4.5",
+    "ts-jest": "29.4.6",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
     "verdaccio": "6.2.3"
