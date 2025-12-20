@@ -6,7 +6,7 @@
   "scripts": {},
   "private": true,
   "dependencies": {
-    "@actions/exec": "^1.1.1",
+    "@actions/exec": "^2.0.0",
     "@nx/devkit": "22.3.3",
     "create-nx-workspace": "22.3.3",
     "js-yaml": "^4.1.0",
