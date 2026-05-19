@@ -25,7 +25,7 @@ jobs:
       id-token: write # needed for provenance data generation
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
