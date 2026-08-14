@@ -41,7 +41,7 @@ jobs:
 
       - uses: azure/setup-helm@v4.3.1
         with:
-          version: '3.21.3'
+          version: '3.21.4'
 
       - run: npm ci
 
