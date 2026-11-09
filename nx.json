@@ -54,6 +54,16 @@
     "version": {
       "preVersionCommand": "npx nx run-many -t build",
       "conventionalCommits": true
+    },
+    "conventionalCommits": {
+      "types": {
+        "refactor": {
+          "changelog": {
+            "title": "💅 Refactors",
+            "hidden": false
+          }
+        }
+      }
     }
   },
   "plugins": [
