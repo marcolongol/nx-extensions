@@ -15,8 +15,11 @@ import { GenericContainer, StartedTestContainer } from 'testcontainers';
 const { join } = path;
 
 // Build the test workspace with the Nx version this repo is on, so results
-// don't change whenever a new Nx is published
-const nxVersion: string = require('nx/package.json').version;
+// don't change whenever a new Nx is published. The scheduled canary sets
+// E2E_NX_VERSION to test other Nx versions the plugin supports.
+const nxVersionOverride = process.env.E2E_NX_VERSION;
+const nxVersion: string =
+  nxVersionOverride ?? require('nx/package.json').version;
 const prettierVersion: string = require('prettier/package.json').version;
 const createNxWorkspaceBin = join(
   path.dirname(require.resolve('create-nx-workspace/package.json')),
@@ -76,7 +79,12 @@ describe('helm', () => {
 
     // The plugin has been built and published to a local registry in the jest globalSetup
     // Install the plugin built with the latest source code into the test repo
-    run(`npm install @nx-extensions/helm@e2e`, workspaceDirectory);
+    // npm picks the newest @nx/devkit in the plugin's peer range, which needs
+    // a newer Nx than older workspaces have, so install the matching one
+    run(
+      `npm install @nx-extensions/helm@e2e @nx/devkit@${nxVersion}`,
+      workspaceDirectory,
+    );
   }, 300_000);
 
   afterAll(async () => {
@@ -207,8 +215,11 @@ describe('helm', () => {
   function createTestWorkspace(parentDirectory: string) {
     const workspaceName = 'test-workspace';
 
+    const createNxWorkspace = nxVersionOverride
+      ? `npx --yes create-nx-workspace@${nxVersionOverride}`
+      : `node ${createNxWorkspaceBin}`;
     run(
-      `node ${createNxWorkspaceBin} ${workspaceName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
+      `${createNxWorkspace} ${workspaceName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
       parentDirectory,
     );
     const directory = join(parentDirectory, workspaceName);
