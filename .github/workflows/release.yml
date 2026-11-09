@@ -32,17 +32,19 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
 
-      - run: npm ci --ignore-scripts
+      - run: pnpm install --frozen-lockfile
 
       # Publishing reads the built packages, so build them first
-      - run: npx nx run-many -t build -p helm,core
+      - run: pnpm exec nx run-many -t build -p helm,core
 
-      - run: npx nx release --dry-run --yes --verbose
+      - run: pnpm exec nx release --dry-run --yes --verbose
 
   version:
     if: ${{ !inputs.dryRun }}
@@ -76,12 +78,14 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
 
-      - run: npm ci --ignore-scripts
+      - run: pnpm install --frozen-lockfile
 
       - name: Commit as the release App
         env:
@@ -98,11 +102,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          npx nx release --skip-publish --yes --verbose
+          pnpm exec nx release --skip-publish --yes --verbose
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # Build after versioning, so the packages carry the new versions
-      - run: npx nx run-many -t build -p helm,core
+      - run: pnpm exec nx run-many -t build -p helm,core
 
       - uses: actions/upload-artifact@v7
         with:
@@ -127,15 +131,17 @@ jobs:
           ref: ${{ needs.version.outputs.sha }}
           persist-credentials: false
 
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
           registry-url: https://registry.npmjs.org/
 
-      # Only needed so nx can run; no lifecycle scripts while the OIDC token
-      # is available
-      - run: npm ci --ignore-scripts
+      # Only needed so nx can run; dependency install scripts are denied in
+      # pnpm-workspace.yaml, which matters while the OIDC token is available
+      - run: pnpm install --frozen-lockfile
 
       - uses: actions/download-artifact@v8
         with:
@@ -143,6 +149,6 @@ jobs:
           path: dist
 
       # Versions already on npm are skipped, so only released packages go out
-      - run: npx nx release publish --verbose
+      - run: pnpm exec nx release publish --verbose
         env:
           NPM_CONFIG_PROVENANCE: 'true'

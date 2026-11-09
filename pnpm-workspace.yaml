@@ -1,0 +1,14 @@
+packages:
+  - 'packages/*'
+  - 'libs/*'
+
+# No dependency needs its install script: they only check or rebuild native
+# binaries that ship prebuilt, or have fallbacks. Deny them explicitly; a
+# new dependency with a script makes `pnpm install` stop and ask.
+allowBuilds:
+  '@parcel/watcher': false
+  '@swc/core': false
+  cpu-features: false
+  nx: false
+  protobufjs: false
+  ssh2: false

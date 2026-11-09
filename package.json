@@ -51,5 +51,6 @@
   "$schema": "https://json.schemastore.org/package",
   "nx": {
     "includedScripts": []
-  }
+  },
+  "packageManager": "pnpm@12.18.0"
 }

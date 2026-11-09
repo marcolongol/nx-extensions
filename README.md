@@ -8,6 +8,18 @@ A Collection of Nx plugins for various tools and frameworks.
 | -------------------------------------- | ------------------------------------------ |
 | [@nx-extensions/helm](./packages/helm) | First class support for Helm charts in Nx. |
 
+## Development
+
+The repository uses [pnpm](https://pnpm.io) workspaces; the version is pinned in `packageManager`.
+
+```bash
+pnpm install
+pnpm exec nx run-many -t lint test build
+pnpm exec nx run helm-e2e:e2e # needs Docker and Helm
+```
+
+Dependency install scripts are denied in `pnpm-workspace.yaml` (`allowBuilds`). If a new dependency needs one, `pnpm install` stops and asks; allow it there only if it's really needed.
+
 ## Releasing
 
 Versions and changelogs come from [conventional commits](https://www.conventionalcommits.org): `fix` is a patch, `feat` a minor and a `!` or `BREAKING CHANGE:` footer a major. Each package is versioned on its own.

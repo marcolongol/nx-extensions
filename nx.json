@@ -52,8 +52,7 @@
       }
     },
     "version": {
-      "conventionalCommits": true,
-      "preserveMatchingDependencyRanges": false
+      "conventionalCommits": true
     },
     "conventionalCommits": {
       "types": {
