@@ -8,9 +8,9 @@ export interface DependencyGeneratorSchema {
   /** Project name */
   project: string;
   /** Chart Name of the Dependency */
-  chartName?: string;
+  chartName: string;
   /** Chart Version of the Dependency */
-  chartVersion?: string;
+  chartVersion: string;
   /** Repository of the Dependency */
   repository: string;
   /** Repository Name of the Dependency */
