@@ -3,12 +3,12 @@
     "chart": {
       "factory": "./src/generators/chart/generator",
       "schema": "./src/generators/chart/schema.json",
-      "description": "chart generator"
+      "description": "Add a Helm chart and a helm target to a project"
     },
     "dependency": {
       "factory": "./src/generators/dependency/generator",
       "schema": "./src/generators/dependency/schema.json",
-      "description": "dependency generator"
+      "description": "Add a chart dependency to a project's Helm chart"
     }
   }
 }
