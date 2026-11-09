@@ -1,0 +1,148 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+---
+# Versions, tags and publishes the packages with nx release, from the
+# conventional commits since the last release. Run it from main; it defaults
+# to a dry run that only prints what would happen.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        type: boolean
+        description: Dry run (print versions, changelogs and the publish without changing anything)
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    if: inputs.dryRun
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - run: npm ci --ignore-scripts
+
+      # Publishing reads the built packages, so build them first
+      - run: npx nx run-many -t build -p helm,core
+
+      - run: npx nx release --dry-run --yes --verbose
+
+  version:
+    if: ${{ !inputs.dryRun }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Holds the release App key; restrict it to the main branch
+    environment: release
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Only release from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases run from main; start the workflow from main or use a dry run"
+          exit 1
+
+      # A separate App that may bypass the main ruleset to push the release
+      # commit and tags. It only needs contents: write.
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - run: npm ci --ignore-scripts
+
+      - name: Commit as the release App
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+
+      # Version, changelog, commit, tag, push and GitHub releases
+      - name: Release
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          npx nx release --skip-publish --yes --verbose
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Build after versioning, so the packages carry the new versions
+      - run: npx nx run-many -t build -p helm,core
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # npm trusted publishing is configured for this environment; require a
+    # reviewer on it
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org/
+
+      # Only needed so nx can run; no lifecycle scripts while the OIDC token
+      # is available
+      - run: npm ci --ignore-scripts
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      # Versions already on npm are skipped, so only released packages go out
+      - run: npx nx release publish --verbose
+        env:
+          NPM_CONFIG_PROVENANCE: 'true'
