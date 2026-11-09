@@ -163,17 +163,9 @@ describe('helm', () => {
     );
   });
 
-  // The executor resolves paths against the cwd instead of the workspace root
-  it.failing(
-    'should package a chart when run from the project folder',
-    () => {
-      if (failedStep) {
-        throw new Error(`Skipped because "${failedStep}" failed`);
-      }
-      run(`npx nx run ${projectName}:helm`, projectDirectory);
-    },
-    180_000,
-  );
+  step('should package a chart when run from the project folder', () => {
+    run(`npx nx run ${projectName}:helm`, projectDirectory);
+  });
 
   /**
    * Runs a command with a minimal environment: no CI secrets, Nx Cloud off, and

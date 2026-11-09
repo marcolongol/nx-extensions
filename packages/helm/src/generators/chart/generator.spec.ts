@@ -96,22 +96,39 @@ describe('chart generator', () => {
       tree.exists('apps/test-project-custom-folder/custom-folder/Chart.yaml'),
     ).toBe(true);
     expect(
-      readProjectConfiguration(tree, customOptions.project).targets['helm']
-        .options.chartFolder,
+      readProjectConfiguration(tree, customOptions.project).targets?.['helm']
+        ?.options.chartFolder,
     ).toBe('apps/test-project-custom-folder/custom-folder');
   });
 
+  it.each([
+    ['escape-sibling', '../other'],
+    ['escape-workspace', '../../../outside'],
+    ['escape-absolute', '/etc/chart'],
+  ])(
+    'should reject chartFolder for %s outside the project root',
+    async (project, chartFolder) => {
+      addProjectConfiguration(tree, project, { root: `apps/${project}` });
+
+      await expect(
+        chartGenerator(tree, {
+          ...options,
+          project,
+          chartFolder,
+        }),
+      ).rejects.toThrow('must be a path inside the project root');
+    },
+  );
+
   it('should update the project configuration', async () => {
-    const projectConfig = readProjectConfiguration(tree, options.project);
-    expect(projectConfig.targets['helm']).toBeDefined();
-    expect(projectConfig.targets['helm'].executor).toBe(
-      '@nx-extensions/helm:package',
-    );
-    expect(projectConfig.targets['helm'].outputs).toEqual([
-      '{options.outputFolder}',
-    ]);
-    expect(projectConfig.targets['helm'].options).toEqual({
-      chartFolder: `${projectConfig.root}/${options.chartFolder}`,
+    const helm = readProjectConfiguration(tree, options.project).targets?.[
+      'helm'
+    ];
+    expect(helm).toBeDefined();
+    expect(helm?.executor).toBe('@nx-extensions/helm:package');
+    expect(helm?.outputs).toEqual(['{options.outputFolder}']);
+    expect(helm?.options).toEqual({
+      chartFolder: `apps/${options.project}/${options.chartFolder}`,
       outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
       push: false,
       remote: 'oci://localhost:5000/helm-charts',
