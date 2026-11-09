@@ -126,7 +126,7 @@ describe('helm', () => {
     );
     expect(
       readFileSync(join(chart, 'templates', 'deployment.yaml'), 'utf8'),
-    ).toContain('{{- include "chart.labels" . | nindent 4 }}');
+    ).toContain('{{- include "my-chart.labels" . | nindent 4 }}');
     expect(
       readFileSync(join(workspaceDirectory, '.prettierignore'), 'utf8'),
     ).toContain('/apps/test-project/chart/templates');

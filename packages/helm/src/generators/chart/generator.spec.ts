@@ -57,6 +57,21 @@ describe('chart generator', () => {
     expect(tree.read(`${chart}/values.yaml`, 'utf8')).toContain('httpRoute:');
   });
 
+  it('should name the template helpers after the chart', async () => {
+    const projectConfig = readProjectConfiguration(tree, options.project);
+    const templates = `${projectConfig.root}/chart/templates`;
+
+    expect(tree.read(`${templates}/_helpers.tpl`, 'utf8')).toContain(
+      '{{- define "test-chart.fullname" -}}',
+    );
+    expect(tree.read(`${templates}/deployment.yaml`, 'utf8')).toContain(
+      '{{ include "test-chart.fullname" . }}',
+    );
+    expect(tree.read(`${templates}/_helpers.tpl`, 'utf8')).not.toContain(
+      '"chart.',
+    );
+  });
+
   it('should only use the networking.k8s.io/v1 Ingress API', async () => {
     const projectConfig = readProjectConfiguration(tree, options.project);
     const ingress = tree.read(
