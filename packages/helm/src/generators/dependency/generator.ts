@@ -40,7 +40,7 @@ export async function dependencyGenerator(
     options.repository,
   );
 
-  if (options.format) {
+  if (!options.skipFormat) {
     await formatFiles(tree);
   }
 }
@@ -52,13 +52,12 @@ function addDependencyToConfig(
   name: string,
   url: string,
 ): ProjectConfiguration {
-  const helm = project.targets?.helm ?? {};
-  const dependencies = helm.options?.dependencies ?? {};
+  const helm = project.targets?.['helm'] ?? {};
   // Re-running the generator for the same repository updates its URL
   // instead of adding a duplicate
   const repositories = [
-    ...(dependencies.repositories ?? []).filter(
-      (repository: { name: string }) => repository.name !== name,
+    ...((helm.options?.repositories ?? []) as { name: string }[]).filter(
+      (repository) => repository.name !== name,
     ),
     { name, url },
   ];
@@ -69,10 +68,7 @@ function addDependencyToConfig(
       ...project.targets,
       helm: {
         ...helm,
-        options: {
-          ...helm.options,
-          dependencies: { ...dependencies, repositories },
-        },
+        options: { ...helm.options, repositories },
       },
     },
   };

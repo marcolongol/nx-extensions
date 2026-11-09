@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "update-2-0-0-package-executor-options": {
+      "version": "2.0.0",
+      "description": "Rename `version` to `chartVersion` and flatten the `dependencies` options of @nx-extensions/helm:package targets, keeping their 1.x dependency behaviour.",
+      "implementation": "./src/migrations/update-2-0-0/update-package-executor-options"
+    }
+  }
+}

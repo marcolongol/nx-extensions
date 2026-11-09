@@ -38,10 +38,8 @@ const options = (
 });
 
 const repositories = (
-  ...entries: NonNullable<
-    NonNullable<PackageExecutorSchema['dependencies']>['repositories']
-  >
-) => options({ dependencies: { repositories: entries } });
+  ...entries: NonNullable<PackageExecutorSchema['repositories']>
+) => options({ repositories: entries });
 
 describe('Package Executor', () => {
   let error: jest.SpyInstance;
@@ -76,7 +74,7 @@ describe('Package Executor', () => {
 
   it('packages the chart with paths resolved against the workspace root', async () => {
     const output = await executor(
-      options({ version: '1.2.3', appVersion: '4.5.6' }),
+      options({ chartVersion: '1.2.3', appVersion: '4.5.6' }),
       context,
     );
 
@@ -114,15 +112,15 @@ describe('Package Executor', () => {
     });
   });
 
-  it('works without a dependencies block, using the schema defaults', async () => {
-    await executor(options({ dependencies: undefined }), context);
+  it('builds dependencies but does not update them by default', async () => {
+    await executor(options(), context);
 
     expect(helm.addRepository).not.toHaveBeenCalled();
-    expect(helm.dependencyUpdate).toHaveBeenCalledWith(
+    expect(helm.dependencyUpdate).not.toHaveBeenCalled();
+    expect(helm.dependencyBuild).toHaveBeenCalledWith(
       path.join(root, 'apps/my-app/chart'),
       { plainHttp: undefined },
     );
-    expect(helm.dependencyBuild).not.toHaveBeenCalled();
   });
 
   it('adds repositories and updates and builds dependencies before packaging', async () => {
@@ -138,11 +136,9 @@ describe('Package Executor', () => {
     await executor(
       options({
         plainHttp: true,
-        dependencies: {
-          update: true,
-          build: true,
-          repositories: [{ name: 'example', url: 'https://example.com' }],
-        },
+        updateDependencies: true,
+        buildDependencies: true,
+        repositories: [{ name: 'example', url: 'https://example.com' }],
       }),
       context,
     );
@@ -262,7 +258,7 @@ describe('Package Executor', () => {
 
   it('rejects repositories without a name or url', async () => {
     await expectFailure(
-      repositories({ name: 'example' }),
+      repositories({ name: 'example' } as never),
       'needs a name and a url',
     );
     expect(helm.addRepository).not.toHaveBeenCalled();
