@@ -5,6 +5,7 @@
 /.nx/workspace-data
 /packages/helm/CHANGELOG.md
 /libs/core/CHANGELOG.md
+/pnpm-lock.yaml
 
 # Helm chart template, kept identical to `helm create`. Prettier cannot parse Helm templates.
 /packages/helm/src/generators/chart/files

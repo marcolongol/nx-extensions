@@ -35,19 +35,21 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-          cache: 'npm'
+          cache: 'pnpm'
 
       - uses: azure/setup-helm@v5.0.1
         with:
           version: '4.3.1'
 
-      # No lifecycle scripts are needed to lint, test, build or run e2e
-      - run: npm ci --ignore-scripts
+      # Dependency install scripts are denied in pnpm-workspace.yaml
+      - run: pnpm install --frozen-lockfile
 
       - uses: nrwl/nx-set-shas@v5
 
-      - run: npx nx format:check
-      - run: npx nx affected -t lint test build e2e --parallel 3
+      - run: pnpm exec nx format:check
+      - run: pnpm exec nx affected -t lint test build e2e --parallel 3
