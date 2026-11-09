@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const { join, dirname } = path;
@@ -57,6 +57,19 @@ describe('helm', () => {
         env: { ...process.env, NX_DAEMON: 'false' },
       },
     );
+
+    // Generated files are formatted with the workspace prettier config (which
+    // uses double quotes), while the Helm templates are left alone
+    const chart = join(projectDirectory, 'chart');
+    expect(readFileSync(join(chart, 'Chart.yaml'), 'utf8')).toContain(
+      'appVersion: "1.16.0"',
+    );
+    expect(
+      readFileSync(join(chart, 'templates', 'deployment.yaml'), 'utf8'),
+    ).toContain('{{- include "chart.labels" . | nindent 4 }}');
+    expect(
+      readFileSync(join(workspaceDirectory, '.prettierignore'), 'utf8'),
+    ).toContain('/apps/test-project/chart/templates');
 
     // Reset Nx cache after modifying project configuration
     execSync('nx reset', {
@@ -132,6 +145,15 @@ function createTestWorkspace() {
       env: process.env,
     },
   );
+
+  // The template workspace has no formatter; use prettier so the e2e run
+  // covers the generator's formatting and .prettierignore handling
+  execSync(`npm install --save-dev prettier`, {
+    cwd: workspaceDirectory,
+    stdio: 'inherit',
+    env: process.env,
+  });
+  writeFileSync(join(workspaceDirectory, '.prettierrc'), '{}\n');
 
   console.log(`Created test workspace in "${workspaceDirectory}"`);
 
