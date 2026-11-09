@@ -13,9 +13,14 @@ import {
 import { parse } from 'yaml';
 
 import { PackageExecutorSchema } from '../executors/package/schema.d';
+import { resolveChartProjectName } from '../utils/project-name';
 
 export interface HelmPluginOptions {
-  /** Name of the chart projects; `{chartName}` is the `name` in Chart.yaml. */
+  /**
+   * Name of the chart projects. `{chartName}` is the `name` in Chart.yaml;
+   * `{projectName}` is the project the chart sits in, or the chart name for a
+   * chart outside any project.
+   */
   projectName?: string;
   /** Name of the target that packages the chart. */
   packageTargetName?: string;
@@ -92,6 +97,7 @@ function isIgnored(workspaceRoot: string, chartFile: string): boolean {
 }
 
 function chartProject(
+  workspaceRoot: string,
   chartRoot: string,
   chartName: string,
   options: Required<
@@ -110,7 +116,15 @@ function chartProject(
   return {
     projects: {
       [chartRoot]: {
-        name: options.projectName.replace('{chartName}', chartName),
+        name: resolveChartProjectName(
+          options.projectName,
+          chartName,
+          chartRoot,
+          (file) => {
+            const fullPath = path.join(workspaceRoot, file);
+            return existsSync(fullPath) ? readFileSync(fullPath, 'utf8') : null;
+          },
+        ),
         tags: ['helm-chart'],
         metadata: { technologies: ['helm'] },
         targets: {
@@ -190,7 +204,10 @@ const createNodesFunction: CreateNodes<HelmPluginOptions>[1] = async (
       }
       continue;
     }
-    results.push([chartFile, chartProject(chartRoot, chart.name, options)]);
+    results.push([
+      chartFile,
+      chartProject(context.workspaceRoot, chartRoot, chart.name, options),
+    ]);
   }
   return results;
 };
@@ -272,10 +289,13 @@ function enclosingProject(
 ): string | undefined {
   let best: { project: string; depth: number } | undefined;
   for (const [project, { root }] of Object.entries(projects)) {
+    // The workspace root project contains every chart, so it doesn't count
     const contains =
       root !== chartRoot &&
-      (root === '.' || root === '' || chartRoot.startsWith(`${root}/`));
-    const depth = root === '.' || root === '' ? 0 : root.split('/').length;
+      root !== '.' &&
+      root !== '' &&
+      chartRoot.startsWith(`${root}/`);
+    const depth = root.split('/').length;
     if (contains && (!best || depth > best.depth)) {
       best = { project, depth };
     }

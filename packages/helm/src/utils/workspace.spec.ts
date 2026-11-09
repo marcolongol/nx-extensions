@@ -84,6 +84,23 @@ describe('workspace utils', () => {
     expect(readJson(tree, 'a/project.json').name).toBe('chart-a');
   });
 
+  it('should name the project after the app with {projectName}', () => {
+    tree.write(
+      'apps/web.app/chart/Chart.yaml',
+      'name: web-app\nversion: 1.0.0\n',
+    );
+    writeJson(tree, 'apps/web.app/project.json', { name: 'web.app' });
+    registerHelmPlugin(tree, { projectName: '{projectName}-chart' });
+
+    updateChartTargetOptions(tree, 'apps/web.app/chart', {
+      'helm-package': {},
+    });
+
+    expect(readJson(tree, 'apps/web.app/chart/project.json').name).toBe(
+      'web.app-chart',
+    );
+  });
+
   it('should merge target options into a chart project.json', () => {
     tree.write('a/Chart.yaml', 'name: a\nversion: 1.0.0\n');
     writeJson(tree, 'a/project.json', {
