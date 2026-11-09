@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@nx-extensions/core": "workspace:^",
+    "enquirer": "^2.4.1",
     "tslib": "^2.3.0",
     "yaml": "^2.9.1"
   },

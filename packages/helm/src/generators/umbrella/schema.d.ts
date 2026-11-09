@@ -5,8 +5,11 @@
 export interface UmbrellaGeneratorSchema {
   /** Name of the umbrella chart. */
   name: string;
-  /** Chart projects to bundle as file:// subcharts. */
-  charts: string[];
+  /**
+   * Chart projects to bundle as file:// subcharts; picked interactively when
+   * left out.
+   */
+  charts?: string[];
   /** Folder for the umbrella chart. Defaults to `charts/{name}`. */
   directory?: string;
   /** Keep publishing the bundled charts on their own. Defaults to true. */

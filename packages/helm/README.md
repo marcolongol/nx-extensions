@@ -174,7 +174,7 @@ An umbrella chart bundles charts of the workspace, so one `helm install` deploys
 nx g @nx-extensions/helm:umbrella platform --charts=frontend-chart,backend-chart
 ```
 
-This creates `charts/platform` (pick another folder with `--directory`) with the charts as `file://` subcharts at their current versions, and a `values.yaml` section for each:
+Leave out `--charts` to pick them from a list of the workspace's chart projects. This creates `charts/platform` (pick another folder with `--directory`) with the charts as `file://` subcharts at their current versions, and a `values.yaml` section for each:
 
 ```yaml
 # charts/platform/Chart.yaml
