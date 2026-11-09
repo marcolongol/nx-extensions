@@ -39,6 +39,27 @@ describe('chart generator', () => {
     expect(tree.exists(`${projectConfig.root}/chart/Chart.yaml`)).toBe(true);
   });
 
+  it('should create the Gateway API HTTPRoute template', async () => {
+    const projectConfig = readProjectConfiguration(tree, options.project);
+    const chart = `${projectConfig.root}/chart`;
+
+    expect(tree.read(`${chart}/templates/httproute.yaml`, 'utf8')).toContain(
+      'apiVersion: gateway.networking.k8s.io/v1',
+    );
+    expect(tree.read(`${chart}/values.yaml`, 'utf8')).toContain('httpRoute:');
+  });
+
+  it('should only use the networking.k8s.io/v1 Ingress API', async () => {
+    const projectConfig = readProjectConfiguration(tree, options.project);
+    const ingress = tree.read(
+      `${projectConfig.root}/chart/templates/ingress.yaml`,
+      'utf8',
+    );
+
+    expect(ingress).toContain('apiVersion: networking.k8s.io/v1');
+    expect(ingress).not.toContain('v1beta1');
+  });
+
   it('should throw an error if the project already has a helm target', async () => {
     try {
       await chartGenerator(tree, options);
