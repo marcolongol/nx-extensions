@@ -1,12 +1,13 @@
 # `@nx-extensions`
 
-A Collection of Nx plugins for various tools and frameworks.
+A collection of Nx plugins for various tools and frameworks.
 
-## Plugins
+## Packages
 
-| Plugin                                 | Description                                |
-| -------------------------------------- | ------------------------------------------ |
-| [@nx-extensions/helm](./packages/helm) | First class support for Helm charts in Nx. |
+| Package                                | Description                                          |
+| -------------------------------------- | ---------------------------------------------------- |
+| [@nx-extensions/helm](./packages/helm) | Nx plugin to generate, package and push Helm charts. |
+| [@nx-extensions/core](./libs/core)     | Shared utilities for the plugins.                    |
 
 ## Development
 
@@ -15,6 +16,7 @@ The repository uses [pnpm](https://pnpm.io) workspaces; the version is pinned in
 ```bash
 pnpm install
 pnpm exec nx run-many -t lint test build
+pnpm exec nx format:check
 pnpm exec nx run helm-e2e:e2e # needs Docker and Helm
 ```
 

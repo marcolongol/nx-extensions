@@ -16,13 +16,11 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 
 ## Getting Started
 
-## Prerequisites
+### Prerequisites
 
-Before you can use the Nx Plugin for Helm, you need to have Helm installed on your machine. You can install Helm by following the instructions [here](https://helm.sh/docs/intro/install/). The plugin supports Nx 22 to 24 and is tested with Helm v4: on every change with the Nx version this repository uses, and weekly with the newest Nx and with Nx 22.
+The plugin runs the `helm` CLI, so [install Helm](https://helm.sh/docs/intro/install/) first. It supports Nx 22 to 24 and is tested with Helm v4: on every change with the Nx version this repository uses, and weekly with the newest Nx and with Nx 22.
 
 ### Install the Nx Plugin for Helm
-
-To get started with the Nx Plugin for Helm, run the following command:
 
 ```bash
 npm install --save-dev @nx-extensions/helm
@@ -36,13 +34,13 @@ npm install --save-dev @nx-extensions/helm @nx/devkit@22
 
 ### Add a Helm chart to your project
 
-To get started with the Nx Plugin for Helm, run the following command:
+Add a chart and a `helm` target to an existing project:
 
 ```bash
 nx g @nx-extensions/helm:chart --name=my-chart --project=my-app
 ```
 
-This will generate a new Helm chart for your project under the `{projectRoot}/chart` directory and configure the helm target in your project `project.json` file. The chart matches what `helm create` generates in Helm v4, including an optional Gateway API `HTTPRoute`.
+This generates a Helm chart in `{projectRoot}/chart` and adds a `helm` target to the project configuration (its `project.json`, or the `nx` field of its `package.json`). The chart matches what `helm create` generates in Helm v4, including an optional Gateway API `HTTPRoute`.
 
 - `--chartFolder` is relative to the project root, so `--chartFolder=deploy/chart` creates `{projectRoot}/deploy/chart`.
 - The chart name is converted to a valid Kubernetes name: lowercase letters, digits and `-`. For example `--name=my.app` creates a chart named `my-app`.
@@ -105,7 +103,7 @@ dependencies:
       }
 ```
 
-The package executor will automatically run `helm repo add` for each repository defined in the `repositories` array before packaging the chart.
+The package executor runs `helm repo add` for each repository in `repositories` before handling the dependencies.
 
 - Repositories are added to a Helm repository config inside the workspace (`node_modules/.cache/@nx-extensions/helm`), not to your global one. Declare every repository your chart needs in `repositories`, or set `HELM_REPOSITORY_CONFIG` to use your own config.
 - `oci://` and `file://` dependencies don't need a repository entry and are not added.
@@ -192,3 +190,5 @@ nx run my-app:helm --push --plainHttp
 - New targets default to `buildDependencies: true` and `updateDependencies: false`. The migration writes your 1.x behaviour (`updateDependencies: true`, `buildDependencies: false`) into existing targets, so nothing changes until you decide to.
 - New charts name their template helpers after the chart instead of `chart.`. Existing charts are left as they are.
 - Repositories now go to a workspace-local Helm repository config. Charts that relied on repositories added to your global Helm config must list them in `repositories`, or set `HELM_REPOSITORY_CONFIG`.
+- Repository URLs with credentials in them (`https://user:pass@...`) are rejected. Use the repository's `username` and `passwordEnv` instead.
+- The generators' `format` option is deprecated and has no effect: generated files are now always formatted, unless you pass `--skipFormat`.
