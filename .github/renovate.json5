@@ -1,8 +1,10 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "github>marcolongol/renovate-config:default.json5",
-    "github>marcolongol/renovate-config:automerge-minor.json5"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'github>marcolongol/renovate-config:default.json5',
+    'github>marcolongol/renovate-config:automerge-minor.json5',
+    // Updates `# renovate:` annotated versions in workflows (WORKFLOW_RENOVATE_VERSION)
+    'customManagers:githubActionsVersions',
   ],
-  "gitAuthor": "marcolongol-bot <166586793+marcolongol-bot[bot]@users.noreply.github.com>"
+  gitAuthor: 'marcolongol-bot <166586793+marcolongol-bot[bot]@users.noreply.github.com>',
 }
