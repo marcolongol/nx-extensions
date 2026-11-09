@@ -2,6 +2,7 @@ import { readNxJson, Tree, updateNxJson } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
 import { initGenerator, VERSION_ACTIONS } from './generator';
+import { defaultPluginOptions } from '../../plugins/plugin';
 
 describe('init generator', () => {
   let tree: Tree;
@@ -10,10 +11,32 @@ describe('init generator', () => {
     tree = createTreeWithEmptyWorkspace();
   });
 
-  it('should register the plugin', async () => {
+  it('should register the plugin with the default options written out', async () => {
     await initGenerator(tree, { skipFormat: true });
 
-    expect(readNxJson(tree)?.plugins).toContain('@nx-extensions/helm');
+    expect(readNxJson(tree)?.plugins).toEqual([
+      {
+        plugin: '@nx-extensions/helm',
+        options: {
+          projectName: '{chartName}-chart',
+          packageTargetName: 'helm-package',
+          pushTargetName: 'helm-push',
+          outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
+          appVersion: 'none',
+        },
+      },
+    ]);
+  });
+
+  it('should turn on appVersion tracking', async () => {
+    await initGenerator(tree, { appVersion: 'project', skipFormat: true });
+
+    expect(readNxJson(tree)?.plugins).toEqual([
+      {
+        plugin: '@nx-extensions/helm',
+        options: { ...defaultPluginOptions, appVersion: 'project' },
+      },
+    ]);
   });
 
   it('should register the plugin with the registry options', async () => {
@@ -25,25 +48,37 @@ describe('init generator', () => {
 
     expect(readNxJson(tree)?.plugins).toContainEqual({
       plugin: '@nx-extensions/helm',
-      options: { remote: 'oci://localhost:5000/charts', plainHttp: true },
+      options: {
+        ...defaultPluginOptions,
+        remote: 'oci://localhost:5000/charts',
+        plainHttp: true,
+      },
     });
   });
 
-  it('should leave an existing registration alone', async () => {
-    const plugins = [
-      {
-        plugin: '@nx-extensions/helm',
-        options: { projectName: '{chartName}' },
-      },
-    ];
-    updateNxJson(tree, { ...readNxJson(tree), plugins });
-
-    await initGenerator(tree, {
-      remote: 'oci://localhost:5000/charts',
-      skipFormat: true,
+  it('should set options on an existing registration', async () => {
+    updateNxJson(tree, {
+      ...readNxJson(tree),
+      plugins: [
+        '@nx/js',
+        {
+          plugin: '@nx-extensions/helm',
+          options: { projectName: '{chartName}' },
+          exclude: ['vendor/**'],
+        },
+      ],
     });
 
-    expect(readNxJson(tree)?.plugins).toEqual(plugins);
+    await initGenerator(tree, { appVersion: 'project', skipFormat: true });
+
+    expect(readNxJson(tree)?.plugins).toEqual([
+      '@nx/js',
+      {
+        plugin: '@nx-extensions/helm',
+        options: { projectName: '{chartName}', appVersion: 'project' },
+        exclude: ['vendor/**'],
+      },
+    ]);
   });
 
   it('should not register the plugin twice', async () => {

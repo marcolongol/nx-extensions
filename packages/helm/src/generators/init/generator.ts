@@ -7,7 +7,10 @@ import {
 } from '@nx/devkit';
 
 import { InitGeneratorSchema } from './schema.d';
-import { registerHelmPlugin } from '../../utils/workspace';
+import {
+  registerHelmPlugin,
+  updateHelmPluginOptions,
+} from '../../utils/workspace';
 
 export const VERSION_ACTIONS =
   '@nx-extensions/helm/src/release/version-actions';
@@ -18,14 +21,18 @@ export const VERSION_ACTIONS =
  * release group that versions those charts. Run by `nx add`.
  */
 export async function initGenerator(tree: Tree, options: InitGeneratorSchema) {
-  const registered = registerHelmPlugin(tree, {
+  const pluginOptions = {
     ...(options.remote ? { remote: options.remote } : {}),
     ...(options.plainHttp ? { plainHttp: true } : {}),
-  });
-  if (!registered && (options.remote || options.plainHttp)) {
-    logger.warn(
-      '@nx-extensions/helm is already registered in nx.json; set remote and plainHttp in its options there.',
-    );
+    ...(options.appVersion ? { appVersion: options.appVersion } : {}),
+  };
+  // `nx add` registers the plugin without options, so running init again
+  // sets them on the existing registration
+  if (
+    !registerHelmPlugin(tree, pluginOptions) &&
+    Object.keys(pluginOptions).length > 0
+  ) {
+    updateHelmPluginOptions(tree, pluginOptions);
   }
 
   if (options.release) {

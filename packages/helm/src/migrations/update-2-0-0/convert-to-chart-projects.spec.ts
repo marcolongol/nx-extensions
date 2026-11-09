@@ -10,6 +10,7 @@ import {
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
 import update from './convert-to-chart-projects';
+import { defaultPluginOptions } from '../../plugins/plugin';
 
 jest.mock('@nx/devkit', () => ({
   ...jest.requireActual('@nx/devkit'),
@@ -55,7 +56,9 @@ describe('convert-to-chart-projects migration', () => {
     expect(
       readProjectConfiguration(tree, 'frontend').targets?.['helm'],
     ).toBeUndefined();
-    expect(readNxJson(tree)?.plugins).toContain('@nx-extensions/helm');
+    expect(readNxJson(tree)?.plugins).toContainEqual(
+      expect.objectContaining({ plugin: '@nx-extensions/helm' }),
+    );
     // The generated defaults are what the plugin infers
     expect(tree.exists('apps/frontend/chart/project.json')).toBe(false);
   });
@@ -73,7 +76,11 @@ describe('convert-to-chart-projects migration', () => {
 
     expect(readNxJson(tree)?.plugins).toContainEqual({
       plugin: '@nx-extensions/helm',
-      options: { remote: 'oci://localhost:5000/charts', plainHttp: true },
+      options: {
+        ...defaultPluginOptions,
+        remote: 'oci://localhost:5000/charts',
+        plainHttp: true,
+      },
     });
     expect(tree.exists('apps/frontend/chart/project.json')).toBe(false);
   });
@@ -93,7 +100,9 @@ describe('convert-to-chart-projects migration', () => {
 
     await update(tree);
 
-    expect(readNxJson(tree)?.plugins).toContain('@nx-extensions/helm');
+    expect(readNxJson(tree)?.plugins).toContainEqual(
+      expect.objectContaining({ plugin: '@nx-extensions/helm' }),
+    );
     const build = { repositories, outputFolder: 'build/apps/frontend' };
     expect(readJson(tree, 'apps/frontend/chart/project.json')).toEqual({
       name: 'frontend-chart',
@@ -135,7 +144,9 @@ describe('convert-to-chart-projects migration', () => {
   it('should register the plugin when there is nothing to convert', async () => {
     await update(tree);
 
-    expect(readNxJson(tree)?.plugins).toContain('@nx-extensions/helm');
+    expect(readNxJson(tree)?.plugins).toContainEqual(
+      expect.objectContaining({ plugin: '@nx-extensions/helm' }),
+    );
   });
 
   it('should leave targets with configurations alone', async () => {
@@ -153,6 +164,8 @@ describe('convert-to-chart-projects migration', () => {
     expect(
       readProjectConfiguration(tree, 'frontend').targets?.['helm'],
     ).toBeDefined();
-    expect(readNxJson(tree)?.plugins).toContain('@nx-extensions/helm');
+    expect(readNxJson(tree)?.plugins).toContainEqual(
+      expect.objectContaining({ plugin: '@nx-extensions/helm' }),
+    );
   });
 });

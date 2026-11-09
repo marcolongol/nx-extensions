@@ -7,6 +7,8 @@ export interface InitGeneratorSchema {
   remote?: string;
   /** Use plain HTTP for an OCI registry without TLS. */
   plainHttp?: boolean;
+  /** `project`: a chart follows the version of the project it is in. */
+  appVersion?: 'none' | 'project';
   /** Add a `charts` release group to nx.json. */
   release?: boolean;
   /** Skip formatting the updated files. */
