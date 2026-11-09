@@ -5,7 +5,7 @@ import { PackageExecutorSchema } from './schema.d';
 
 const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
   options: PackageExecutorSchema,
-  context: ExecutorContext,
+  _context: ExecutorContext,
 ) => {
   const helm = createHelmClient();
 

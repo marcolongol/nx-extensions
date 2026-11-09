@@ -10,13 +10,13 @@ import { PackageExecutorSchema } from './schema.d';
 import chartGenerator from '../../generators/chart/generator';
 import { ChartGeneratorSchema } from '../../generators/chart/schema.d';
 
-const options: PackageExecutorSchema = {
+const _options: PackageExecutorSchema = {
   chartFolder: 'chart',
   outputFolder: 'chart',
   publish: false,
 };
 
-const context: ExecutorContext = {
+const _context: ExecutorContext = {
   root: '',
   projectsConfigurations: {
     version: 1,
@@ -62,7 +62,7 @@ describe('Package Executor', () => {
 
   it('can run', async () => {
     // TODO: Implement test
-    // const output = await executor(options, context);
+    // const output = await executor(_options, _context);
     // expect(output.success).toBe(true);
   });
 });
