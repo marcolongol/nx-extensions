@@ -9,7 +9,7 @@ import {
   Tree,
   updateProjectConfiguration,
 } from '@nx/devkit';
-import { addToPrettierIgnore } from '@nx-extensions/core';
+import { addToPrettierIgnore, isPathInside } from '@nx-extensions/core';
 
 import { ChartGeneratorSchema } from './schema.d';
 
@@ -53,10 +53,13 @@ export async function chartGenerator(
     );
   }
 
-  const chartRoot = joinPathFragments(
-    project.root,
-    options.chartFolder ?? 'chart',
-  );
+  const chartFolder = options.chartFolder ?? 'chart';
+  const chartRoot = joinPathFragments(project.root, chartFolder);
+  if (path.isAbsolute(chartFolder) || !isPathInside(project.root, chartRoot)) {
+    throw new Error(
+      `chartFolder "${chartFolder}" must be a path inside the project root "${project.root}".`,
+    );
+  }
 
   updateProjectConfiguration(tree, options.project, {
     ...project,
