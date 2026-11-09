@@ -221,6 +221,7 @@ Charts and npm packages can be released together: give the packages their own re
 `nx release publish` (or the publish step of `nx release`) runs each chart's `nx-release-publish` target, which packages the chart at the version in its Chart.yaml and pushes it to the plugin's `remote`. Charts go after the charts they depend on, so subcharts are pushed before their umbrella.
 
 - **Already published versions are skipped**, checked with `helm show chart`, so a publish can be re-run safely.
+- **`nx release --projects=<chart>`** versions the umbrellas that bundle the chart too, but Nx only publishes the projects you named. Run `nx release publish` afterwards to push the umbrellas; the charts that are already published are skipped.
 - **`--dry-run`** packages the charts without pushing them.
 - **Subcharts that only ship inside an umbrella** can skip being pushed on their own. The umbrella generator's `--publishSubcharts=false` adds this `project.json` next to each subchart's Chart.yaml:
 
