@@ -6,4 +6,4 @@ Shared utilities for the `@nx-extensions` Nx plugins. It is published so the plu
 - `isPathInside(parent, target)` and `resolvePathInside(root, target, label)` check that an option value doesn't point outside the workspace or project.
 - `addToPrettierIgnore(tree, entries)` adds entries to the workspace `.prettierignore` from a generator, leaving existing content as it is.
 
-It needs `@nx/devkit` 22 to 24 as a peer dependency.
+It needs `@nx/devkit` 23 or 24 as a peer dependency, the same Nx majors the plugins support.

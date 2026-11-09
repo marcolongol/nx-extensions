@@ -29,6 +29,19 @@ pnpm exec nx run helm-e2e:e2e
 
 Set `E2E_KEEP_WORKSPACE=true` to keep the test workspace for debugging.
 
+Set `E2E_NX_VERSION` (e.g. `23`) to run them against another Nx version, as the weekly canary does.
+
+## Supported Nx versions
+
+The plugins support the current and the previous Nx major. When a new Nx major comes out:
+
+- Run `nx migrate` for this repository, so it builds and tests with the new major.
+- Move the `@nx/devkit` and `nx` peer ranges of the packages to the new and the previous major, and the canary matrix in `.github/workflows/e2e-canary.yml` to the previous major.
+- Drop code that only the oldest major needed.
+- Ship a migration (`migrations.json`) for every change to how users configure a plugin, so `nx migrate` updates their workspaces.
+
+Dropping a major is a breaking change: release it with a `!` commit.
+
 ## Commit messages
 
 Commits follow [conventional commits](https://www.conventionalcommits.org), because releases are versioned and their changelogs written from them. Each package is versioned on its own:
