@@ -3,6 +3,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
 import { initGenerator, VERSION_ACTIONS } from './generator';
 import { defaultPluginOptions } from '../../plugins/plugin';
+import { readHelmPluginOptions } from '../../utils/workspace';
 
 describe('init generator', () => {
   let tree: Tree;
@@ -90,6 +91,17 @@ describe('init generator', () => {
     await initGenerator(tree, { skipFormat: true });
 
     expect(readNxJson(tree)?.plugins).toEqual(['@nx-extensions/helm']);
+  });
+
+  it("should not turn off appVersion tracking with the prompt's default", async () => {
+    await initGenerator(tree, { appVersion: 'project', skipFormat: true });
+    await initGenerator(tree, {
+      appVersion: 'none',
+      release: true,
+      skipFormat: true,
+    });
+
+    expect(readHelmPluginOptions(tree)?.appVersion).toBe('project');
   });
 
   it('should not add a release group by default', async () => {

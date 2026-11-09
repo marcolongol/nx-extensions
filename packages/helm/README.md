@@ -52,13 +52,13 @@ The plugin is registered with its default options written out, so `nx.json` show
 }
 ```
 
-`nx add` runs the init generator without options. Run it again to set up a registry, versioning with `nx release`, or charts that follow their app's version:
+`nx add` runs the init generator, which asks for the OCI registry to push charts to, whether a chart's `appVersion` should follow the app it's in, and whether to add a release group for `nx release`. Run it again to change them, or pass them as flags:
 
 ```bash
 nx g @nx-extensions/helm:init --remote=oci://ghcr.io/my-org/charts --appVersion=project --release
 ```
 
-`--remote`, `--plainHttp` and `--appVersion` set those plugin options; `--release` adds a `charts` release group, see [Versioning charts](#versioning-charts-with-nx-release).
+`--remote`, `--plainHttp` and `--appVersion` set those plugin options; `--release` adds a `charts` release group, see [Versioning charts](#versioning-charts-with-nx-release). With `--no-interactive` (and in CI) nothing is asked and the defaults are used. Running init again doesn't turn off `appVersion: "project"`; set it back to `none` in `nx.json` for that.
 
 ### Add a Helm chart to your project
 

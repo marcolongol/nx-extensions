@@ -26,13 +26,18 @@ export async function initGenerator(tree: Tree, options: InitGeneratorSchema) {
     ...(options.plainHttp ? { plainHttp: true } : {}),
     ...(options.appVersion ? { appVersion: options.appVersion } : {}),
   };
-  // `nx add` registers the plugin without options, so running init again
-  // sets them on the existing registration
-  if (
-    !registerHelmPlugin(tree, pluginOptions) &&
-    Object.keys(pluginOptions).length > 0
-  ) {
-    updateHelmPluginOptions(tree, pluginOptions);
+  // Running init again, e.g. for --release, sets options on the existing
+  // registration. The appVersion prompt answers `none` by default, which
+  // shouldn't turn off tracking that is already on.
+  if (!registerHelmPlugin(tree, pluginOptions)) {
+    const { appVersion, ...changes } = pluginOptions;
+    const update = {
+      ...changes,
+      ...(appVersion && appVersion !== 'none' ? { appVersion } : {}),
+    };
+    if (Object.keys(update).length > 0) {
+      updateHelmPluginOptions(tree, update);
+    }
   }
 
   if (options.release) {

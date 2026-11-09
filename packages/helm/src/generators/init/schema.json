@@ -8,7 +8,8 @@
     "remote": {
       "type": "string",
       "description": "OCI registry the chart projects push to, e.g. `oci://ghcr.io/my-org/charts`.",
-      "pattern": "^oci://"
+      "pattern": "^(oci://.+)?$",
+      "x-prompt": "OCI registry to push the charts to, e.g. oci://ghcr.io/my-org/charts (leave empty to set it later)"
     },
     "plainHttp": {
       "type": "boolean",
@@ -18,12 +19,14 @@
     "appVersion": {
       "type": "string",
       "enum": ["none", "project"],
-      "description": "`project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion` to the project's new version. Defaults to `none`."
+      "description": "`project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion` to the project's new version. Defaults to `none`.",
+      "x-prompt": "Should a chart's appVersion follow the version of the app it's in? (project: yes, none: no)"
     },
     "release": {
       "type": "boolean",
       "description": "Add a `charts` release group to nx.json, so `nx release` versions the chart projects.",
-      "default": false
+      "default": false,
+      "x-prompt": "Add a release group, so nx release versions and publishes the charts?"
     },
     "skipFormat": {
       "type": "boolean",

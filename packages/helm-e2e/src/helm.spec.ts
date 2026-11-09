@@ -87,7 +87,10 @@ describe('helm', () => {
       workspaceDirectory,
     );
     // What `nx add` runs after installing
-    run('npx nx generate @nx-extensions/helm:init', workspaceDirectory);
+    run(
+      'npx nx generate @nx-extensions/helm:init --no-interactive',
+      workspaceDirectory,
+    );
   }, 300_000);
 
   afterAll(async () => {
@@ -197,7 +200,7 @@ describe('helm', () => {
   step('should release and publish the charts', () => {
     // The plugin is already registered, so this only adds the release group
     run(
-      'npx nx generate @nx-extensions/helm:init --release',
+      'npx nx generate @nx-extensions/helm:init --release --no-interactive',
       workspaceDirectory,
     );
     updateJson(join(workspaceDirectory, 'nx.json'), (nxJson) => {
