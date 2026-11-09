@@ -3,6 +3,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
 const { join, dirname } = path;
+import { workspaceRoot } from '@nx/devkit';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 
 describe('helm', () => {
@@ -49,7 +50,7 @@ describe('helm', () => {
 
   it('should generate a chart', () => {
     execSync(
-      `nx generate @nx-extensions/helm:chart --name=my-chart --project=test-project --no-interactive`,
+      `nx generate @nx-extensions/helm:chart --name=my-chart --project=@org/test-project --no-interactive`,
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
@@ -65,14 +66,14 @@ describe('helm', () => {
   });
 
   it('should package a chart', () => {
-    execSync(`nx run test-project:helm`, {
+    execSync(`nx run @org/test-project:helm`, {
       cwd: workspaceDirectory,
       stdio: 'inherit',
     });
   });
 
   it('should package and push a chart', () => {
-    execSync(`nx run test-project:helm --push`, {
+    execSync(`nx run @org/test-project:helm --push`, {
       cwd: workspaceDirectory,
       stdio: 'inherit',
     });
@@ -80,7 +81,7 @@ describe('helm', () => {
 
   it('should add a dependency to a chart', () => {
     execSync(
-      `nx generate @nx-extensions/helm:dependency --project=test-project --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami --no-interactive`,
+      `nx generate @nx-extensions/helm:dependency --project=@org/test-project --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami --no-interactive`,
       {
         cwd: workspaceDirectory,
         stdio: 'inherit',
@@ -96,7 +97,7 @@ describe('helm', () => {
   });
 
   it('should package and push a chart with dependencies', () => {
-    execSync(`nx run test-project:helm --push`, {
+    execSync(`nx run @org/test-project:helm --push`, {
       cwd: workspaceDirectory,
       stdio: 'inherit',
     });
@@ -110,7 +111,7 @@ describe('helm', () => {
  */
 function createTestWorkspace() {
   const workspaceName = 'test-workspace';
-  const workspaceDirectory = join(process.cwd(), 'tmp', workspaceName);
+  const workspaceDirectory = join(workspaceRoot, 'tmp', workspaceName);
 
   // Ensure workspaceDirectory is empty
   rmSync(workspaceDirectory, {
@@ -124,7 +125,7 @@ function createTestWorkspace() {
 
   // Create a new Nx workspace
   execSync(
-    `npx --yes create-nx-workspace@latest ${workspaceName} --preset apps --nxCloud=skip --no-interactive`,
+    `npx --yes create-nx-workspace@latest ${workspaceName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
     {
       cwd: dirname(workspaceDirectory),
       stdio: 'inherit',
