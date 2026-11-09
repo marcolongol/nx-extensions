@@ -215,14 +215,15 @@ Both use the [package executor](#build-and-package-your-helm-chart), so its opti
 
 Plugin options:
 
-| Option              | Default                                     | Description                                                            |
-| ------------------- | ------------------------------------------- | ---------------------------------------------------------------------- |
-| `projectName`       | `{chartName}-chart`                         | Name of the chart projects; `{chartName}` is the `name` in Chart.yaml. |
-| `packageTargetName` | `helm-package`                              | Name of the package target.                                            |
-| `pushTargetName`    | `helm-push`                                 | Name of the push target.                                               |
-| `outputFolder`      | `{workspaceRoot}/dist/charts/{projectRoot}` | Where packaged charts go.                                              |
-| `remote`            |                                             | OCI registry for the push target.                                      |
-| `plainHttp`         | `false`                                     | Use plain HTTP for OCI registries without TLS.                         |
+| Option              | Default                                     | Description                                                                                                                                                                                                  |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `projectName`       | `{chartName}-chart`                         | Name of the chart projects; `{chartName}` is the `name` in Chart.yaml.                                                                                                                                       |
+| `packageTargetName` | `helm-package`                              | Name of the package target.                                                                                                                                                                                  |
+| `pushTargetName`    | `helm-push`                                 | Name of the push target.                                                                                                                                                                                     |
+| `outputFolder`      | `{workspaceRoot}/dist/charts/{projectRoot}` | Where packaged charts go.                                                                                                                                                                                    |
+| `remote`            |                                             | OCI registry for the push target.                                                                                                                                                                            |
+| `plainHttp`         | `false`                                     | Use plain HTTP for OCI registries without TLS.                                                                                                                                                               |
+| `appVersion`        | `none`                                      | `project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion`. See [Versioning charts](#versioning-charts-with-nx-release). |
 
 ### Umbrella charts
 
@@ -243,6 +244,36 @@ dependencies:
 ```
 
 `helm-package` on the umbrella builds its `file://` subcharts into its `charts/` folder before packaging, so the packaged umbrella contains them. Add `charts/*/charts/*.tgz` (or wherever your umbrellas live) to `.gitignore`.
+
+## Versioning charts with nx release
+
+Chart projects can be versioned with [Nx Release](https://nx.dev/features/manage-releases): `nx release` bumps `version` in each chart's `Chart.yaml` from your conventional commits, writes a `CHANGELOG.md` next to the chart and tags it. Add a release group for the charts that uses the plugin's version actions:
+
+```json
+{
+  "release": {
+    "projectsRelationship": "independent",
+    "version": { "conventionalCommits": true },
+    "changelog": { "projectChangelogs": true },
+    "groups": {
+      "charts": {
+        "projects": ["tag:helm-chart"],
+        "version": {
+          "versionActions": "@nx-extensions/helm/src/release/version-actions"
+        }
+      }
+    }
+  }
+}
+```
+
+- **Commits count for the chart they touch.** A commit to `apps/my-app/chart` bumps `my-app-chart`, not the app.
+- **0.x versions.** Like npm packages, a chart below 1.0.0 gets a patch bump for a `feat`, and a minor bump for a breaking change. `helm create` starts charts at 0.1.0.
+- **Umbrella charts.** When a chart that an umbrella depends on is released, the umbrella gets a patch bump and its `dependencies` entry is updated to the new version. Exact versions are replaced; `^` and `~` ranges keep their prefix; other ranges (`>=1.0.0`, `1.x`) are left as they are. The umbrella's `Chart.lock` is refreshed with `helm dependency update` in the same release commit, so `helm` has to be on the `PATH` when you release.
+- **`appVersion`.** With the plugin's `appVersion: "project"` option, a chart inside an app's folder depends on the app. When the app is released too (e.g. in its own release group), the chart gets a patch bump and its `appVersion` is set to the app's new version.
+- **Registries without TLS.** If an umbrella's OCI dependencies come from a registry without TLS, set `"versionActionsOptions": { "plainHttp": true }` under `release.version`, so the `Chart.lock` refresh uses `--plain-http`.
+
+Charts and npm packages can be released together: give the packages their own release group with the default version actions.
 
 ## Upgrading from 1.x
 

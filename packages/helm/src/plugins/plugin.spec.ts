@@ -269,6 +269,33 @@ describe('helm plugin', () => {
       ]);
     });
 
+    it('links a nested chart to its enclosing project with appVersion: project', async () => {
+      chart('apps/frontend/chart/Chart.yaml', 'frontend');
+      chart('charts/platform/Chart.yaml', 'platform');
+      const projects = {
+        'frontend-chart': 'apps/frontend/chart',
+        'platform-chart': 'charts/platform',
+        frontend: 'apps/frontend',
+        apps: 'apps',
+      };
+
+      expect(
+        await createDependencies(undefined, graphContext(projects)),
+      ).toEqual([]);
+      expect(
+        await createDependencies(
+          { appVersion: 'project' },
+          graphContext(projects),
+        ),
+      ).toEqual([
+        {
+          source: 'frontend-chart',
+          target: 'frontend',
+          type: DependencyType.implicit,
+        },
+      ]);
+    });
+
     it('ignores projects without a Chart.yaml', async () => {
       write('apps/frontend/project.json', '{}');
 
