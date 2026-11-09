@@ -20,11 +20,6 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - name: Dump GitHub context
-        run: echo "$GITHUB_CONTEXT"
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
