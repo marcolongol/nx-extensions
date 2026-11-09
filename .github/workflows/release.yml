@@ -50,8 +50,6 @@ jobs:
     if: ${{ !inputs.dryRun }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Holds the release App key; restrict it to the main branch
-    environment: release
     permissions:
       contents: read
     outputs:
@@ -63,14 +61,28 @@ jobs:
           echo "::error::Releases run from main; start the workflow from main or use a dry run"
           exit 1
 
-      # A separate App that may bypass the main ruleset to push the release
-      # commit and tags. It only needs contents: write.
+      # The bot App's ID and key, as step outputs so later steps never see them
+      - name: Load secrets
+        id: op
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5
+        with:
+          export-env: false
+          # 1Password CLI has no Renovate datasource; bump manually
+          version: '2.42.0'
+        env:
+          OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          BOT_APP_ID: op://homelab/GITHUB/GITHUB_APP_ID
+          BOT_APP_PRIVATE_KEY: op://homelab/GITHUB/GITHUB_APP_PRIVATE_KEY
+
+      # The bot may bypass the main ruleset to push the release commit and
+      # tags; this token only gets contents: write
       - name: Generate token
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
-          app-id: ${{ vars.RELEASE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          app-id: ${{ steps.op.outputs.BOT_APP_ID }}
+          private-key: ${{ steps.op.outputs.BOT_APP_PRIVATE_KEY }}
           permission-contents: write
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
