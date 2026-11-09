@@ -57,11 +57,13 @@ describe('umbrella generator', () => {
           name: 'frontend',
           version: '0.1.0',
           repository: 'file://../../apps/frontend/chart',
+          condition: 'frontend.enabled',
         },
         {
           name: 'backend',
           version: '0.1.0',
           repository: 'file://../../apps/backend/chart',
+          condition: 'backend.enabled',
         },
       ],
     });
@@ -78,8 +80,8 @@ describe('umbrella generator', () => {
       parse(tree.read('charts/platform/values.yaml', 'utf8') ?? ''),
     ).toEqual({
       global: {},
-      frontend: {},
-      backend: {},
+      frontend: { enabled: true },
+      backend: { enabled: true },
     });
     expect(tree.exists('charts/platform/.helmignore')).toBe(true);
     expect(tree.read('.gitignore', 'utf8')).toContain(
