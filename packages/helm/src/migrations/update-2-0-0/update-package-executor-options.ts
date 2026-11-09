@@ -17,8 +17,9 @@ type Options = Record<string, unknown>;
  * `version` becomes `chartVersion`, and the `dependencies` object becomes
  * `updateDependencies`, `buildDependencies` and `repositories`.
  *
- * 2.0.0 changed the defaults (no `dependency update`, `dependency build` on),
- * so a target's options get the 1.x behaviour written out explicitly.
+ * 2.0.0 also changed the defaults (`updateDependencies` off,
+ * `buildDependencies` on), so existing targets get the 1.x behaviour written
+ * out explicitly.
  */
 export default async function update(tree: Tree) {
   for (const [name, project] of getProjects(tree)) {

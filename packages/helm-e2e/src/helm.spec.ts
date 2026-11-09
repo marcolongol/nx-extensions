@@ -32,7 +32,7 @@ describe('helm', () => {
   let tmpDirectory: string;
   let workspaceDirectory: string;
   let projectDirectory: string;
-  // Depends on the workspace layout create-nx-workspace picks (e.g. @org/test-project)
+  // test-project or @org/test-project, depending on the layout create-nx-workspace picks
   let projectName: string;
   let registryContainer: StartedTestContainer | undefined;
   let chartRepository: ChildProcess | undefined;
@@ -77,10 +77,9 @@ describe('helm', () => {
     projectDirectory = createTestProject(workspaceDirectory);
     projectName = findProjectName(workspaceDirectory);
 
-    // The plugin has been built and published to a local registry in the jest globalSetup
-    // Install the plugin built with the latest source code into the test repo
-    // npm picks the newest @nx/devkit in the plugin's peer range, which needs
-    // a newer Nx than older workspaces have, so install the matching one
+    // Install the plugin the global setup published to the local registry.
+    // @nx/devkit is pinned to the workspace's Nx version: npm would otherwise
+    // pick the newest one in the plugin's peer range, which needs a newer Nx.
     run(
       `npm install @nx-extensions/helm@e2e @nx/devkit@${nxVersion}`,
       workspaceDirectory,
@@ -242,7 +241,7 @@ describe('helm', () => {
   function createTestProject(workspace: string) {
     const directory = join(workspace, 'apps', 'test-project');
 
-    // Create a new express application
+    // A Node application for the chart
     run(`npm install @nx/node@${nxVersion}`, workspace);
     run(
       `npx nx generate @nx/node:application test-project --directory=apps/test-project --nxCloud=skip --no-interactive`,
