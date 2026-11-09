@@ -1,4 +1,3 @@
-import { Options } from 'prettier';
 /** Types for the core library */
 
 /** Interface for objects that can be initialized */
@@ -31,10 +30,4 @@ export abstract class AbstractHelmClient implements Initializable {
   async initialize(): Promise<void> {
     throw new Error('Method not implemented.');
   }
-}
-
-/** Represents an Prettier ignore file. */
-export interface PrettierConfig {
-  sourceFilepath: string;
-  config: Options;
 }
