@@ -1,47 +1,4 @@
-import { Tree } from '@nx/devkit';
-
-import { PrettierConfig } from './types';
-
-/**
- * Resolves the existing Prettier configuration.
- *
- * @returns {Promise<ExistingPrettierConfig | undefined>}
- */
-export async function resolveUserExistingPrettierConfig(): Promise<
-  PrettierConfig | undefined
-> {
-  let prettier: typeof import('prettier');
-  try {
-    prettier = require('prettier');
-  } catch {
-    return undefined;
-  }
-
-  if (!prettier) {
-    return undefined;
-  }
-  try {
-    const filepath = await prettier.resolveConfigFile();
-    if (!filepath) {
-      return undefined;
-    }
-
-    const config = await prettier.resolveConfig(process.cwd(), {
-      useCache: false,
-      config: filepath,
-    });
-    if (!config) {
-      return undefined;
-    }
-
-    return {
-      sourceFilepath: filepath,
-      config: config,
-    };
-  } catch {
-    return undefined;
-  }
-}
+import type { Tree } from '@nx/devkit';
 
 /**
  * Appends entries to the workspace `.prettierignore`, creating it if needed.
