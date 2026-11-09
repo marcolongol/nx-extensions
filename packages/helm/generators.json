@@ -3,12 +3,22 @@
     "chart": {
       "factory": "./src/generators/chart/generator",
       "schema": "./src/generators/chart/schema.json",
-      "description": "Add a Helm chart and a helm target to a project"
+      "description": "Add a Helm chart to a project; the plugin makes it a chart project"
     },
     "dependency": {
       "factory": "./src/generators/dependency/generator",
       "schema": "./src/generators/dependency/schema.json",
-      "description": "Add a chart dependency to a project's Helm chart"
+      "description": "Add a chart dependency to a chart project"
+    },
+    "init": {
+      "factory": "./src/generators/init/generator",
+      "schema": "./src/generators/init/schema.json",
+      "description": "Register the @nx-extensions/helm plugin, so every Chart.yaml becomes a chart project"
+    },
+    "umbrella": {
+      "factory": "./src/generators/umbrella/generator",
+      "schema": "./src/generators/umbrella/schema.json",
+      "description": "Add an umbrella chart that bundles chart projects as subcharts"
     }
   }
 }

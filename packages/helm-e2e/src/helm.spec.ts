@@ -34,6 +34,8 @@ describe('helm', () => {
   let projectDirectory: string;
   // test-project or @org/test-project, depending on the layout create-nx-workspace picks
   let projectName: string;
+  /** The project the plugin infers for the generated chart. */
+  const chartProject = 'my-chart-chart';
   let registryContainer: StartedTestContainer | undefined;
   let chartRepository: ChildProcess | undefined;
   let remote: string;
@@ -84,6 +86,8 @@ describe('helm', () => {
       `npm install @nx-extensions/helm@e2e @nx/devkit@${nxVersion}`,
       workspaceDirectory,
     );
+    // What `nx add` runs after installing
+    run('npx nx generate @nx-extensions/helm:init', workspaceDirectory);
   }, 300_000);
 
   afterAll(async () => {
@@ -137,41 +141,35 @@ describe('helm', () => {
     expect(
       readFileSync(join(workspaceDirectory, '.prettierignore'), 'utf8'),
     ).toContain('/apps/test-project/chart/templates');
-
-    // Reset Nx cache after modifying project configuration
-    run('npx nx reset', workspaceDirectory);
   });
 
   step('should package a chart', () => {
-    run(`npx nx run ${projectName}:helm`, workspaceDirectory);
+    run(`npx nx run ${chartProject}:helm-package`, workspaceDirectory);
   });
 
   step('should package and push a chart', () => {
     run(
-      `npx nx run ${projectName}:helm --push --plainHttp --remote=${remote}`,
+      `npx nx run ${chartProject}:helm-push --plainHttp --remote=${remote}`,
       workspaceDirectory,
     );
   });
 
   step('should add a dependency to a chart', () => {
     run(
-      `npx nx generate @nx-extensions/helm:dependency --project=${projectName} --chartName=e2e-dependency --chartVersion=0.1.0 --repository=${chartRepositoryUrl} --repositoryName=e2e --no-interactive`,
+      `npx nx generate @nx-extensions/helm:dependency --project=${chartProject} --chartName=e2e-dependency --chartVersion=0.1.0 --repository=${chartRepositoryUrl} --repositoryName=e2e --no-interactive`,
       workspaceDirectory,
     );
-
-    // Reset Nx cache after modifying project configuration
-    run('npx nx reset', workspaceDirectory);
   });
 
   step('should package and push a chart with dependencies', () => {
     run(
-      `npx nx run ${projectName}:helm --push --plainHttp --remote=${remote}`,
+      `npx nx run ${chartProject}:helm-push --plainHttp --remote=${remote}`,
       workspaceDirectory,
     );
   });
 
   step('should package a chart when run from the project folder', () => {
-    run(`npx nx run ${projectName}:helm`, projectDirectory);
+    run(`npx nx run ${chartProject}:helm-package`, projectDirectory);
   });
 
   /**

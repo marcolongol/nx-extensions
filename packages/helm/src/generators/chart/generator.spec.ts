@@ -8,6 +8,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
 import { chartGenerator, toChartName } from './generator';
 import { ChartGeneratorSchema } from './schema.d';
+import { registerHelmPlugin } from '../../utils/workspace';
 
 jest.mock('@nx/devkit', () => ({
   ...jest.requireActual('@nx/devkit'),
@@ -22,6 +23,7 @@ describe('chart generator', () => {
 
   beforeAll(async () => {
     tree = createTreeWithEmptyWorkspace();
+    registerHelmPlugin(tree);
 
     options = {
       name: 'test-chart',
@@ -89,12 +91,6 @@ describe('chart generator', () => {
     );
   });
 
-  it('should throw an error if the project already has a helm target', async () => {
-    await expect(chartGenerator(tree, options)).rejects.toThrow(
-      `Project ${options.project} already has a helm target. Please remove it before running this command.`,
-    );
-  });
-
   it('should create the chart in a folder relative to the project root', async () => {
     const customOptions = {
       ...options,
@@ -110,10 +106,6 @@ describe('chart generator', () => {
     expect(
       tree.exists('apps/test-project-custom-folder/custom-folder/Chart.yaml'),
     ).toBe(true);
-    expect(
-      readProjectConfiguration(tree, customOptions.project).targets?.['helm']
-        ?.options.chartFolder,
-    ).toBe('apps/test-project-custom-folder/custom-folder');
   });
 
   it.each([
@@ -134,22 +126,56 @@ describe('chart generator', () => {
       ).rejects.toThrow('must be a path inside the project root');
     },
   );
+});
 
-  it('should update the project configuration', async () => {
-    const helm = readProjectConfiguration(tree, options.project).targets?.[
-      'helm'
-    ];
-    expect(helm).toBeDefined();
-    expect(helm?.executor).toBe('@nx-extensions/helm:package');
-    expect(helm?.outputs).toEqual(['{options.outputFolder}']);
-    expect(helm?.options).toEqual({
-      chartFolder: `apps/${options.project}/${options.chartFolder}`,
-      outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
-      push: false,
-      updateDependencies: false,
-      buildDependencies: true,
-      repositories: [],
+describe('chart generator chart project', () => {
+  let tree: Tree;
+
+  beforeEach(async () => {
+    tree = createTreeWithEmptyWorkspace();
+    registerHelmPlugin(tree);
+    addProjectConfiguration(tree, 'my-app', { root: 'apps/my-app' });
+    await chartGenerator(tree, {
+      name: 'my-app',
+      project: 'my-app',
+      skipFormat: true,
     });
+  });
+
+  it('should create the chart without a helm target', () => {
+    expect(tree.exists('apps/my-app/chart/Chart.yaml')).toBe(true);
+    expect(
+      readProjectConfiguration(tree, 'my-app').targets?.['helm'],
+    ).toBeUndefined();
+  });
+
+  it('should ignore packaged dependencies', () => {
+    expect(tree.read('.gitignore', 'utf8')).toContain(
+      '/apps/my-app/chart/charts/*.tgz\n',
+    );
+  });
+
+  it('should need the plugin', async () => {
+    tree = createTreeWithEmptyWorkspace();
+    addProjectConfiguration(tree, 'my-app', { root: 'apps/my-app' });
+
+    await expect(
+      chartGenerator(tree, {
+        name: 'my-app',
+        project: 'my-app',
+        skipFormat: true,
+      }),
+    ).rejects.toThrow('nx add @nx-extensions/helm');
+  });
+
+  it('should not overwrite an existing chart', async () => {
+    await expect(
+      chartGenerator(tree, {
+        name: 'other',
+        project: 'my-app',
+        skipFormat: true,
+      }),
+    ).rejects.toThrow('already has a Chart.yaml');
   });
 });
 
@@ -159,6 +185,7 @@ describe('chart generator formatting', () => {
   beforeEach(() => {
     formatFilesSpy.mockClear();
     tree = createTreeWithEmptyWorkspace();
+    registerHelmPlugin(tree);
     addProjectConfiguration(tree, 'my-app', { root: 'apps/my-app' });
   });
 
@@ -202,6 +229,7 @@ describe('chart name', () => {
 
   beforeEach(() => {
     tree = createTreeWithEmptyWorkspace();
+    registerHelmPlugin(tree);
   });
 
   it.each([

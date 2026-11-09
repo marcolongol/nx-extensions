@@ -8,9 +8,7 @@ import {
   CreateNodesResult,
   DependencyType,
   logger,
-  normalizePath,
   RawProjectGraphDependency,
-  TargetConfiguration,
 } from '@nx/devkit';
 import { parse } from 'yaml';
 
@@ -83,48 +81,6 @@ function isIgnored(workspaceRoot: string, chartFile: string): boolean {
   );
 }
 
-/**
- * Whether a project already packages this chart with a `helm` target from the
- * chart generator, found in the nearest project.json or package.json above it.
- */
-function hasGeneratedTarget(workspaceRoot: string, chartRoot: string): boolean {
-  let dir = chartRoot;
-  while (true) {
-    for (const file of ['project.json', 'package.json']) {
-      const configPath = path.join(workspaceRoot, dir, file);
-      if (!existsSync(configPath)) continue;
-      let config: { targets?: unknown; nx?: { targets?: unknown } };
-      try {
-        config = JSON.parse(readFileSync(configPath, 'utf8'));
-      } catch {
-        continue;
-      }
-      const targets = (
-        file === 'project.json' ? config.targets : config.nx?.targets
-      ) as
-        | Record<string, TargetConfiguration<Partial<PackageExecutorSchema>>>
-        | undefined;
-      const packagesChart = Object.values(targets ?? {}).some(
-        (target) =>
-          target.executor === PACKAGE_EXECUTOR &&
-          typeof target.options?.chartFolder === 'string' &&
-          normalizePath(
-            path.posix.normalize(
-              target.options.chartFolder.replace('{projectRoot}', dir),
-            ),
-          ) === chartRoot,
-      );
-      if (packagesChart) {
-        return true;
-      }
-    }
-    if (dir === '.' || dir === '') {
-      return false;
-    }
-    dir = path.posix.dirname(dir);
-  }
-}
-
 function chartProject(
   chartRoot: string,
   chartName: string,
@@ -194,7 +150,6 @@ const createNodesFunction: CreateNodes<HelmPluginOptions>[1] = async (
   for (const chartFile of chartFiles) {
     if (isIgnored(context.workspaceRoot, chartFile)) continue;
     const chartRoot = path.posix.dirname(chartFile);
-    if (hasGeneratedTarget(context.workspaceRoot, chartRoot)) continue;
 
     const chart = readChart(context.workspaceRoot, chartFile);
     if (typeof chart?.name !== 'string' || !chart.name) {

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "HelmUmbrellaGeneratorSchema",
+  "title": "Umbrella Generator Schema",
+  "description": "Adds an umbrella chart that bundles chart projects of this workspace as file:// subcharts, so one helm install deploys them together.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the umbrella chart. Converted to a valid Kubernetes name, like the chart generator does.",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "Provide a name for the umbrella chart"
+    },
+    "charts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Chart projects to bundle, e.g. `--charts=frontend-chart,backend-chart`.",
+      "x-prompt": "Which chart projects should the umbrella chart bundle (comma-separated)?"
+    },
+    "directory": {
+      "type": "string",
+      "description": "Folder for the umbrella chart, relative to the workspace root. Defaults to `charts/{name}`."
+    },
+    "publishSubcharts": {
+      "type": "boolean",
+      "description": "Keep publishing the bundled charts on their own with nx release publish. With false, only the umbrella is published, with the subcharts inside it.",
+      "default": true
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting the updated files.",
+      "default": false,
+      "x-priority": "internal"
+    }
+  },
+  "required": ["name", "charts"]
+}

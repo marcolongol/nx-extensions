@@ -7,12 +7,17 @@ import {
   logger,
   readProjectConfiguration,
   Tree,
-  updateProjectConfiguration,
   visitNotIgnoredFiles,
 } from '@nx/devkit';
 import { addToPrettierIgnore, isPathInside } from '@nx-extensions/core';
 
 import { ChartGeneratorSchema } from './schema.d';
+import {
+  addToGitIgnore,
+  chartProjectName,
+  chartTargetNames,
+  readHelmPluginOptions,
+} from '../../utils/workspace';
 
 /**
  * Turns a name into a valid chart name. Helm uses the chart name in resource
@@ -41,12 +46,6 @@ export async function chartGenerator(
 ) {
   const project = readProjectConfiguration(tree, options.project);
 
-  if (project.targets?.helm) {
-    throw new Error(
-      `Project ${options.project} already has a helm target. Please remove it before running this command.`,
-    );
-  }
-
   const chartName = toChartName(options.name);
   if (chartName !== options.name) {
     logger.warn(
@@ -62,24 +61,17 @@ export async function chartGenerator(
     );
   }
 
-  updateProjectConfiguration(tree, options.project, {
-    ...project,
-    targets: {
-      ...project.targets,
-      helm: {
-        executor: '@nx-extensions/helm:package',
-        outputs: ['{options.outputFolder}'],
-        options: {
-          chartFolder: chartRoot,
-          outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
-          push: false,
-          updateDependencies: false,
-          buildDependencies: true,
-          repositories: [],
-        },
-      },
-    },
-  });
+  if (tree.exists(joinPathFragments(chartRoot, 'Chart.yaml'))) {
+    throw new Error(`${chartRoot} already has a Chart.yaml.`);
+  }
+
+  // The plugin makes the chart a project of its own
+  const pluginOptions = readHelmPluginOptions(tree);
+  if (!pluginOptions) {
+    throw new Error(
+      'Charts are packaged as chart projects, which need the @nx-extensions/helm plugin. Run `nx add @nx-extensions/helm` first.',
+    );
+  }
 
   generateFiles(tree, path.join(__dirname, 'files', 'chart'), chartRoot, {
     ...options,
@@ -89,15 +81,28 @@ export async function chartGenerator(
   // Helm template syntax is not valid YAML, so formatters can't parse it
   const templates = joinPathFragments(chartRoot, 'templates');
   addToPrettierIgnore(tree, [`/${templates}`]);
+  // Packaged dependencies that helm dependency build/update download
+  addToGitIgnore(tree, [`/${joinPathFragments(chartRoot, 'charts')}/*.tgz`]);
+
+  const projectName = chartProjectName(pluginOptions, chartName);
+  logger.info(
+    `The ${chartName} chart is the project ${projectName}; package it with \`nx run ${projectName}:${chartTargetNames(pluginOptions).package}\`.`,
+  );
 
   if (!options.skipFormat) {
-    // Older devkits' formatFiles doesn't read the .prettierignore in the
-    // tree, so keep the templates out of the tree while formatting
-    const held = holdBack(tree, templates);
-    await formatFiles(tree);
-    for (const [file, content] of held) {
-      tree.write(file, content);
-    }
+    await formatFilesExcept(tree, templates);
+  }
+}
+
+/**
+ * Formats the tree, keeping a folder out of it while it runs: older devkits'
+ * formatFiles doesn't read the .prettierignore in the tree.
+ */
+export async function formatFilesExcept(tree: Tree, folder: string) {
+  const held = holdBack(tree, folder);
+  await formatFiles(tree);
+  for (const [file, content] of held) {
+    tree.write(file, content);
   }
 }
 
