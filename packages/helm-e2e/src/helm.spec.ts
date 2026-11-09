@@ -195,16 +195,16 @@ describe('helm', () => {
   });
 
   step('should release and publish the charts', () => {
+    // The plugin is already registered, so this only adds the release group
     run(
       'npx nx generate @nx-extensions/helm:init --release',
       workspaceDirectory,
     );
     updateJson(join(workspaceDirectory, 'nx.json'), (nxJson) => {
-      nxJson.plugins = nxJson.plugins.map((plugin: unknown) =>
-        plugin === '@nx-extensions/helm'
-          ? { plugin, options: { remote, plainHttp: true } }
-          : plugin,
+      const helm = nxJson.plugins.find(
+        (entry: { plugin?: string }) => entry.plugin === '@nx-extensions/helm',
       );
+      helm.options = { ...helm.options, remote, plainHttp: true };
       nxJson.release.git = { push: false };
       nxJson.release.version = { conventionalCommits: true };
       return nxJson;

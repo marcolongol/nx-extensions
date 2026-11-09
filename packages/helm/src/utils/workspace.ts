@@ -11,7 +11,7 @@ import {
 } from '@nx/devkit';
 import { parse } from 'yaml';
 
-import { HelmPluginOptions } from '../plugins/plugin';
+import { defaultPluginOptions, HelmPluginOptions } from '../plugins/plugin';
 
 export const PLUGIN_NAME = '@nx-extensions/helm';
 
@@ -32,8 +32,9 @@ export function readHelmPluginOptions(tree: Tree): HelmPluginOptions | null {
 }
 
 /**
- * Registers the plugin in nx.json, with the given options. Returns false when
- * it was already registered, in which case nx.json is left alone.
+ * Registers the plugin in nx.json, with the given options and the defaults for
+ * the rest. Returns false when it was already registered, in which case nx.json
+ * is left alone.
  */
 export function registerHelmPlugin(
   tree: Tree,
@@ -45,14 +46,33 @@ export function registerHelmPlugin(
   ) {
     return false;
   }
+  // The defaults are written out, so nx.json shows what can be changed
   nxJson.plugins = [
     ...(nxJson.plugins ?? []),
-    Object.keys(options).length > 0
-      ? { plugin: PLUGIN_NAME, options }
-      : PLUGIN_NAME,
+    { plugin: PLUGIN_NAME, options: { ...defaultPluginOptions, ...options } },
   ];
   updateNxJson(tree, nxJson);
   return true;
+}
+
+/**
+ * Sets options on the plugin's registration in nx.json, keeping its other
+ * options and its include/exclude.
+ */
+export function updateHelmPluginOptions(
+  tree: Tree,
+  options: HelmPluginOptions,
+) {
+  const nxJson = readNxJson(tree) ?? {};
+  nxJson.plugins = (nxJson.plugins ?? []).map((entry) => {
+    if (pluginName(entry) !== PLUGIN_NAME) return entry;
+    const plugin = typeof entry === 'string' ? { plugin: entry } : entry;
+    return {
+      ...plugin,
+      options: { ...(plugin.options as object | undefined), ...options },
+    };
+  });
+  updateNxJson(tree, nxJson);
 }
 
 /**

@@ -44,11 +44,13 @@ const PACKAGE_EXECUTOR = '@nx-extensions/helm:package';
 const RELEASE_PUBLISH_EXECUTOR = '@nx-extensions/helm:release-publish';
 const CHART_FILE = 'Chart.yaml';
 
-const defaults = {
+/** The options the plugin uses when nx.json doesn't set them. */
+export const defaultPluginOptions = {
   projectName: '{chartName}-chart',
   packageTargetName: 'helm-package',
   pushTargetName: 'helm-push',
   outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
+  appVersion: 'none',
 } satisfies HelmPluginOptions;
 
 function readChart(workspaceRoot: string, chartFile: string): Chart | null {
@@ -145,7 +147,7 @@ const createNodesFunction: CreateNodes<HelmPluginOptions>[1] = async (
   userOptions,
   context: CreateNodesContext,
 ) => {
-  const options = { ...defaults, ...userOptions };
+  const options = { ...defaultPluginOptions, ...userOptions };
   const results: [string, CreateNodesResult][] = [];
   for (const chartFile of chartFiles) {
     if (isIgnored(context.workspaceRoot, chartFile)) continue;

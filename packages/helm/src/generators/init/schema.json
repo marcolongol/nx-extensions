@@ -15,6 +15,11 @@
       "description": "Use plain HTTP for an OCI registry without TLS.",
       "default": false
     },
+    "appVersion": {
+      "type": "string",
+      "enum": ["none", "project"],
+      "description": "`project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion` to the project's new version. Defaults to `none`."
+    },
     "release": {
       "type": "boolean",
       "description": "Add a `charts` release group to nx.json, so `nx release` versions the chart projects.",

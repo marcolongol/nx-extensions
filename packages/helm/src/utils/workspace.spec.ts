@@ -14,6 +14,7 @@ import {
   registerHelmPlugin,
   updateChartTargetOptions,
 } from './workspace';
+import { defaultPluginOptions } from '../plugins/plugin';
 
 jest.mock('@nx/devkit', () => ({
   ...jest.requireActual('@nx/devkit'),
@@ -30,13 +31,16 @@ describe('workspace utils', () => {
   it('should read the plugin options', () => {
     expect(readHelmPluginOptions(tree)).toBeNull();
     registerHelmPlugin(tree);
-    expect(readHelmPluginOptions(tree)).toEqual({});
+    expect(readHelmPluginOptions(tree)).toEqual(defaultPluginOptions);
   });
 
   it('should register the plugin once', () => {
     expect(registerHelmPlugin(tree, { remote: 'oci://r/charts' })).toBe(true);
     expect(registerHelmPlugin(tree)).toBe(false);
-    expect(readHelmPluginOptions(tree)).toEqual({ remote: 'oci://r/charts' });
+    expect(readHelmPluginOptions(tree)).toEqual({
+      ...defaultPluginOptions,
+      remote: 'oci://r/charts',
+    });
   });
 
   it('should find the root of an inferred project in the graph', async () => {

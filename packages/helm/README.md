@@ -33,13 +33,32 @@ This installs the plugin and registers it in `nx.json`, so every `Chart.yaml` in
 npm install --save-dev @nx/devkit@22
 ```
 
-To push charts to a registry, or version them with `nx release`, set that up with the init generator (`nx add` runs it without options):
+The plugin is registered with its default options written out, so `nx.json` shows what you can change (see [Chart projects](#chart-projects)):
 
-```bash
-nx g @nx-extensions/helm:init --remote=oci://ghcr.io/my-org/charts --release
+```json
+{
+  "plugins": [
+    {
+      "plugin": "@nx-extensions/helm",
+      "options": {
+        "projectName": "{chartName}-chart",
+        "packageTargetName": "helm-package",
+        "pushTargetName": "helm-push",
+        "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
+        "appVersion": "none"
+      }
+    }
+  ]
+}
 ```
 
-`--release` adds a `charts` release group, see [Versioning charts](#versioning-charts-with-nx-release). If the plugin is already registered, set `remote` in its options in `nx.json` instead.
+`nx add` runs the init generator without options. Run it again to set up a registry, versioning with `nx release`, or charts that follow their app's version:
+
+```bash
+nx g @nx-extensions/helm:init --remote=oci://ghcr.io/my-org/charts --appVersion=project --release
+```
+
+`--remote`, `--plainHttp` and `--appVersion` set those plugin options; `--release` adds a `charts` release group, see [Versioning charts](#versioning-charts-with-nx-release).
 
 ### Add a Helm chart to your project
 
@@ -72,7 +91,7 @@ Every `Chart.yaml` becomes a project named `<chart name>-chart` and tagged `helm
 | `helm-push`          | Packages the chart and pushes it to `remote`.                                                                                             |
 | `nx-release-publish` | Used by `nx release publish`: pushes the chart to `remote` at the version in its Chart.yaml. See [Publishing charts](#publishing-charts). |
 
-Plugin options, set in `nx.json`:
+Plugin options, in the plugin's entry in `nx.json`:
 
 | Option              | Default                                     | Description                                                                                                                                                                                                  |
 | ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -83,17 +102,6 @@ Plugin options, set in `nx.json`:
 | `remote`            |                                             | OCI registry for the push target.                                                                                                                                                                            |
 | `plainHttp`         | `false`                                     | Use plain HTTP for OCI registries without TLS.                                                                                                                                                               |
 | `appVersion`        | `none`                                      | `project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion`. See [Versioning charts](#versioning-charts-with-nx-release). |
-
-```json
-{
-  "plugins": [
-    {
-      "plugin": "@nx-extensions/helm",
-      "options": { "remote": "oci://ghcr.io/my-org/charts" }
-    }
-  ]
-}
-```
 
 ### Target options
 
@@ -211,7 +219,7 @@ Chart projects can be versioned with [Nx Release](https://nx.dev/features/manage
 - **Commits count for the chart they touch.** A commit to `apps/my-app/chart` bumps `my-app-chart`, not the app.
 - **0.x versions.** Like npm packages, a chart below 1.0.0 gets a patch bump for a `feat`, and a minor bump for a breaking change. `helm create` starts charts at 0.1.0.
 - **Umbrella charts.** When a chart that an umbrella depends on is released, the umbrella gets a patch bump and its `dependencies` entry is updated to the new version. Exact versions are replaced; `^` and `~` ranges keep their prefix; other ranges (`>=1.0.0`, `1.x`) are left as they are. The umbrella's `Chart.lock` is refreshed with `helm dependency update` in the same release commit, so `helm` has to be on the `PATH` when you release.
-- **`appVersion`.** With the plugin's `appVersion: "project"` option, a chart inside an app's folder depends on the app. When the app is released too (e.g. in its own release group), the chart gets a patch bump and its `appVersion` is set to the app's new version.
+- **`appVersion`.** With the plugin's `appVersion: "project"` option (`init --appVersion=project`), a chart inside an app's folder depends on the app. When the app is released too (e.g. in its own release group), the chart gets a patch bump and its `appVersion` is set to the app's new version.
 - **Registries without TLS.** If an umbrella's OCI dependencies come from a registry without TLS, set `"versionActionsOptions": { "plainHttp": true }` under `release.version`, so the `Chart.lock` refresh uses `--plain-http`.
 
 Charts and npm packages can be released together: give the packages their own release group with the default version actions.
