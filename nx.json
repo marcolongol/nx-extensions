@@ -89,5 +89,6 @@
   ],
   "affected": {
     "legacy": true
-  }
+  },
+  "neverConnectToCloud": true
 }

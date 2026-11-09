@@ -14,9 +14,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  # PRs only get a read-only token (if NX_CLOUD_READ_TOKEN exists), so they
-  # can't write to the shared remote cache
-  NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name == 'pull_request' && secrets.NX_CLOUD_READ_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
   NX_SKIP_NX_CACHE: ${{ vars.NX_SKIP_NX_CACHE || 'false' }}
 
 permissions:
