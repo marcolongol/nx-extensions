@@ -1,7 +1,7 @@
-import path from 'node:path';
-import { TextEncoder, TextDecoder } from 'node:util';
+const path = require('node:path');
+const { TextEncoder, TextDecoder } = require('node:util');
 
-import { Config } from 'jest';
+import type { Config } from 'jest';
 
 const config: Config = {
   displayName: 'helm-e2e',
@@ -33,4 +33,4 @@ const config: Config = {
   ),
 };
 
-export default config;
+module.exports = config;

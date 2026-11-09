@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   displayName: 'helm',
   preset: '../../jest.preset.js',
   transform: {

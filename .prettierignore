@@ -5,3 +5,5 @@
 /.nx/workspace-data
 /packages/helm/CHANGELOG.md
 /libs/core/CHANGELOG.md
+
+.nx/self-healing
