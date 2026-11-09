@@ -35,10 +35,6 @@ export class CommandError extends Error {
 /**
  * Hides the credentials in URLs (`https://user:pass@host`) and any `redact`
  * values, so a command line can be logged safely.
- *
- * @param {string[]} args
- * @param {string[]} redact
- * @returns {string[]}
  */
 export function redactArgs(args: string[], redact: string[] = []): string[] {
   return args.map((arg) => {
@@ -56,11 +52,6 @@ export function redactArgs(args: string[], redact: string[] = []): string[] {
  * Runs a command without a shell, so arguments are never interpreted by one.
  * Output is shown as it arrives and also returned. Rejects with a
  * {@link CommandError} when the command exits with a non-zero code.
- *
- * @param {string} command
- * @param {string[]} args
- * @param {RunOptions} options
- * @returns {Promise<RunResult>}
  */
 export function runCommand(
   command: string,

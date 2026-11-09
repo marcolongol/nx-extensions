@@ -3,9 +3,6 @@ import type { Tree } from '@nx/devkit';
 /**
  * Appends entries to the workspace `.prettierignore`, creating it if needed.
  * Entries already present are skipped and existing content is left untouched.
- *
- * @param {Tree} tree
- * @param {string[]} ignore
  */
 export function addToPrettierIgnore(tree: Tree, ignore: string[]) {
   const ignorePath = '.prettierignore';
