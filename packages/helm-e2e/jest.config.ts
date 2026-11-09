@@ -1,7 +1,7 @@
+import type { Config } from 'jest';
+
 const path = require('node:path');
 const { TextEncoder, TextDecoder } = require('node:util');
-
-import type { Config } from 'jest';
 
 const config: Config = {
   displayName: 'helm-e2e',
