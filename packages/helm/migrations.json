@@ -4,6 +4,11 @@
       "version": "2.0.0",
       "description": "Rename `version` to `chartVersion` and flatten the `dependencies` options of @nx-extensions/helm:package targets, keeping their 1.x dependency behaviour.",
       "implementation": "./src/migrations/update-2-0-0/update-package-executor-options"
+    },
+    "update-2-0-0-chart-projects": {
+      "version": "2.0.0",
+      "description": "Register the @nx-extensions/helm plugin and replace @nx-extensions/helm:package targets with the chart projects it infers, keeping their options.",
+      "implementation": "./src/migrations/update-2-0-0/convert-to-chart-projects"
     }
   }
 }

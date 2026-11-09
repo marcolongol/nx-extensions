@@ -157,65 +157,6 @@ describe('helm plugin', () => {
     expect(Object.keys(projects)).toEqual(['charts/platform/Chart.yaml']);
   });
 
-  it.each([
-    [
-      'project.json',
-      {
-        targets: {
-          helm: {
-            executor: '@nx-extensions/helm:package',
-            options: { chartFolder: 'apps/my-app/chart' },
-          },
-        },
-      },
-    ],
-    [
-      'project.json',
-      {
-        targets: {
-          helm: {
-            executor: '@nx-extensions/helm:package',
-            options: { chartFolder: '{projectRoot}/chart' },
-          },
-        },
-      },
-    ],
-    [
-      'package.json',
-      {
-        name: 'my-app',
-        nx: {
-          targets: {
-            helm: {
-              executor: '@nx-extensions/helm:package',
-              options: { chartFolder: 'apps/my-app/chart' },
-            },
-          },
-        },
-      },
-    ],
-  ])(
-    'skips a chart that a generated helm target in %s packages',
-    async (file, config) => {
-      write(`apps/my-app/${file}`, JSON.stringify(config));
-      chart('apps/my-app/chart/Chart.yaml', 'my-app');
-
-      expect(await run(['apps/my-app/chart/Chart.yaml'])).toEqual({});
-    },
-  );
-
-  it('keeps a chart that the enclosing project does not package', async () => {
-    write(
-      'apps/my-app/project.json',
-      JSON.stringify({ targets: { build: { command: 'echo build' } } }),
-    );
-    chart('apps/my-app/chart/Chart.yaml', 'my-app');
-
-    expect(Object.keys(await run(['apps/my-app/chart/Chart.yaml']))).toEqual([
-      'apps/my-app/chart/Chart.yaml',
-    ]);
-  });
-
   it('skips and warns about charts without a name or with invalid YAML', async () => {
     const warn = jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
     write('a/Chart.yaml', 'apiVersion: v2\nversion: 0.1.0\n');

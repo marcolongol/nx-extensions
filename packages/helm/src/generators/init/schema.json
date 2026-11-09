@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "HelmInitGeneratorSchema",
+  "title": "Init Generator Schema",
+  "description": "Registers the @nx-extensions/helm plugin in nx.json, so every Chart.yaml becomes a chart project. Run by `nx add @nx-extensions/helm`.",
+  "type": "object",
+  "properties": {
+    "remote": {
+      "type": "string",
+      "description": "OCI registry the chart projects push to, e.g. `oci://ghcr.io/my-org/charts`.",
+      "pattern": "^oci://"
+    },
+    "plainHttp": {
+      "type": "boolean",
+      "description": "Use plain HTTP for an OCI registry without TLS.",
+      "default": false
+    },
+    "release": {
+      "type": "boolean",
+      "description": "Add a `charts` release group to nx.json, so `nx release` versions the chart projects.",
+      "default": false
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting the updated files.",
+      "default": false,
+      "x-priority": "internal"
+    }
+  }
+}

@@ -6,12 +6,16 @@
   "properties": {
     "project": {
       "type": "string",
-      "description": "Project name",
+      "description": "The chart project, or a project with a helm target from the chart generator, to add the dependency to.",
       "$default": {
         "$source": "argv",
         "index": 0
       },
-      "x-prompt": "Provide the Project name"
+      "x-prompt": "Provide the project to add the dependency to"
+    },
+    "chartProject": {
+      "type": "string",
+      "description": "A chart project in this workspace to depend on. It is added as a file:// dependency at its current version, instead of chartName, chartVersion and repository."
     },
     "chartName": {
       "type": "string",
@@ -19,8 +23,7 @@
       "$default": {
         "$source": "argv",
         "index": 1
-      },
-      "x-prompt": "Provide the Chart Name of the Dependency"
+      }
     },
     "chartVersion": {
       "type": "string",
@@ -28,8 +31,7 @@
       "$default": {
         "$source": "argv",
         "index": 2
-      },
-      "x-prompt": "Provide the Chart Version of the Dependency"
+      }
     },
     "repository": {
       "type": "string",
@@ -37,17 +39,15 @@
       "$default": {
         "$source": "argv",
         "index": 3
-      },
-      "x-prompt": "Provide the Repository of the Dependency"
+      }
     },
     "repositoryName": {
       "type": "string",
-      "description": "Repository Name of the Dependency",
+      "description": "Name of the repository for `helm repo add`. Needed for https:// and http:// repositories; oci:// and file:// ones are used directly.",
       "$default": {
         "$source": "argv",
         "index": 4
-      },
-      "x-prompt": "Provide the Repository Name of the Dependency"
+      }
     },
     "format": {
       "type": "boolean",
@@ -61,11 +61,5 @@
       "x-priority": "internal"
     }
   },
-  "required": [
-    "project",
-    "chartName",
-    "chartVersion",
-    "repository",
-    "repositoryName"
-  ]
+  "required": ["project"]
 }

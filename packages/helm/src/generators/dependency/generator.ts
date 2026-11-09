@@ -1,44 +1,56 @@
-import {
-  formatFiles,
-  ProjectConfiguration,
-  readProjectConfiguration,
-  Tree,
-  updateProjectConfiguration,
-} from '@nx/devkit';
-import { isPathInside } from '@nx-extensions/core';
+import path from 'node:path';
+
+import { formatFiles, joinPathFragments, Tree } from '@nx/devkit';
 import { isMap, isSeq, parseDocument } from 'yaml';
 
 import { DependencyGeneratorSchema } from './schema.d';
 import { checkRepositoryUrl } from '../../utils/repository';
+import {
+  chartTargetNames,
+  findProjectRoot,
+  readChartMetadata,
+  readHelmPluginOptions,
+  updateChartTargetOptions,
+} from '../../utils/workspace';
 
+interface Dependency {
+  name: string;
+  version: string;
+  repository: string;
+}
+
+/** Adds a dependency to the Chart.yaml of a chart project. */
 export async function dependencyGenerator(
   tree: Tree,
   options: DependencyGeneratorSchema,
 ) {
-  // Rejects credentials in the URL and warns about plain HTTP
-  checkRepositoryUrl(options.repository);
-
-  const project = readProjectConfiguration(tree, options.project);
-
-  if (!project.targets?.helm) {
+  const chartRoot = await findProjectRoot(tree, options.project);
+  if (!tree.exists(joinPathFragments(chartRoot, 'Chart.yaml'))) {
     throw new Error(
-      `Project ${options.project} does not have a helm target. Please run the chart generator first.`,
+      `Project ${options.project} is not a chart project: it has no Chart.yaml at its root.`,
     );
   }
 
-  updateProjectConfiguration(
-    tree,
-    options.project,
-    addDependencyToConfig(project, options.repositoryName, options.repository),
-  );
+  const dependency = options.chartProject
+    ? await workspaceChart(tree, chartRoot, options.chartProject)
+    : externalChart(options);
+  // Rejects credentials in the URL and warns about plain HTTP
+  const kind = checkRepositoryUrl(dependency.repository);
 
-  updateChartYaml(
-    tree,
-    project,
-    options.chartName,
-    options.chartVersion,
-    options.repository,
-  );
+  // oci:// and file:// dependencies are used directly, without helm repo add
+  if (kind === 'http' || kind === 'https') {
+    if (!options.repositoryName) {
+      throw new Error(
+        `${dependency.repository} has to be added with helm repo add, so it needs a repositoryName.`,
+      );
+    }
+    addRepository(tree, chartRoot, {
+      name: options.repositoryName,
+      url: dependency.repository,
+    });
+  }
+
+  updateChartYaml(tree, chartRoot, dependency);
 
   if (!options.skipFormat) {
     await formatFiles(tree);
@@ -47,48 +59,90 @@ export async function dependencyGenerator(
 
 export default dependencyGenerator;
 
-function addDependencyToConfig(
-  project: ProjectConfiguration,
-  name: string,
-  url: string,
-): ProjectConfiguration {
-  const helm = project.targets?.['helm'] ?? {};
-  // Re-running the generator for the same repository updates its URL
-  // instead of adding a duplicate
-  const repositories = [
-    ...((helm.options?.repositories ?? []) as { name: string }[]).filter(
-      (repository) => repository.name !== name,
-    ),
-    { name, url },
-  ];
+function externalChart(options: DependencyGeneratorSchema): Dependency {
+  const { chartName, chartVersion, repository } = options;
+  if (!chartName || !chartVersion || !repository) {
+    throw new Error(
+      'Pass chartName, chartVersion and repository, or chartProject for a chart in this workspace.',
+    );
+  }
+  return { name: chartName, version: chartVersion, repository };
+}
 
+/** A chart project in the workspace, as a file:// dependency. */
+async function workspaceChart(
+  tree: Tree,
+  chartRoot: string,
+  chartProject: string,
+): Promise<Dependency> {
+  const root = await findProjectRoot(tree, chartProject);
+  if (root === chartRoot) {
+    throw new Error(`A chart can't depend on itself.`);
+  }
+  const { name, version } = readChartMetadata(tree, root);
   return {
-    ...project,
-    targets: {
-      ...project.targets,
-      helm: {
-        ...helm,
-        options: { ...helm.options, repositories },
-      },
-    },
+    name,
+    version,
+    repository: `file://${path.posix.relative(chartRoot, root)}`,
   };
+}
+
+/**
+ * Chart projects get their repositories from a project.json at the chart root,
+ * for every target that builds the chart's dependencies.
+ */
+function addRepository(
+  tree: Tree,
+  chartRoot: string,
+  repository: { name: string; url: string },
+) {
+  const targets = chartTargetNames(readHelmPluginOptions(tree) ?? {});
+  const file = joinPathFragments(chartRoot, 'project.json');
+  const existing: Record<string, { options?: { repositories?: unknown } }> =
+    tree.exists(file)
+      ? (JSON.parse(tree.read(file, 'utf8') ?? '{}').targets ?? {})
+      : {};
+  updateChartTargetOptions(
+    tree,
+    chartRoot,
+    Object.fromEntries(
+      [targets.package, targets.push, targets.publish].map((target) => [
+        target,
+        {
+          repositories: withRepository(
+            existing[target]?.options?.repositories,
+            repository,
+          ),
+        },
+      ]),
+    ),
+  );
+}
+
+/**
+ * Re-running the generator for the same repository updates its URL instead of
+ * adding a duplicate.
+ */
+function withRepository(
+  repositories: unknown,
+  repository: { name: string; url: string },
+) {
+  return [
+    ...(
+      (Array.isArray(repositories) ? repositories : []) as {
+        name: string;
+      }[]
+    ).filter((entry) => entry.name !== repository.name),
+    repository,
+  ];
 }
 
 function updateChartYaml(
   tree: Tree,
-  project: ProjectConfiguration,
-  name: string,
-  version: string,
-  repository: string,
+  chartRoot: string,
+  dependency: Dependency,
 ) {
-  const chartFolder: string = project.targets?.helm?.options?.chartFolder;
-  if (!chartFolder || !isPathInside(project.root, chartFolder)) {
-    throw new Error(
-      `The helm target's chartFolder "${chartFolder}" must be inside the project root "${project.root}".`,
-    );
-  }
-
-  const chartPath = `${chartFolder}/Chart.yaml`;
+  const chartPath = joinPathFragments(chartRoot, 'Chart.yaml');
   if (!tree.exists(chartPath)) {
     throw new Error(`${chartPath} not found`);
   }
@@ -112,13 +166,13 @@ function updateChartYaml(
   }
 
   const existing = dependencies.items.find(
-    (item) => isMap(item) && item.get('name') === name,
+    (item) => isMap(item) && item.get('name') === dependency.name,
   );
   if (isMap(existing)) {
-    existing.set('version', version);
-    existing.set('repository', repository);
+    existing.set('version', dependency.version);
+    existing.set('repository', dependency.repository);
   } else {
-    dependencies.add(chart.createNode({ name, version, repository }));
+    dependencies.add(chart.createNode({ ...dependency }));
   }
 
   tree.write(chartPath, chart.toString());

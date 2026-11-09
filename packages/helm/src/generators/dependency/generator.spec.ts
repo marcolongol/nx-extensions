@@ -1,20 +1,27 @@
 import {
-  Tree,
   addProjectConfiguration,
-  readProjectConfiguration,
-  updateProjectConfiguration,
+  createProjectGraphAsync,
+  readJson,
+  Tree,
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { parse } from 'yaml';
 
 import { dependencyGenerator } from './generator';
 import { DependencyGeneratorSchema } from './schema';
+import { chartProjectGraph } from '../../testing/chart-graph';
+import { registerHelmPlugin } from '../../utils/workspace';
 import { chartGenerator } from '../chart/generator';
 
-const chartYaml = 'apps/test-project/chart/Chart.yaml';
+jest.mock('@nx/devkit', () => ({
+  ...jest.requireActual('@nx/devkit'),
+  createProjectGraphAsync: jest.fn(),
+}));
 
-const options: DependencyGeneratorSchema = {
-  project: 'test-project',
+const platform = 'charts/platform/Chart.yaml';
+
+const nginx: DependencyGeneratorSchema = {
+  project: 'platform-chart',
   chartName: 'nginx',
   chartVersion: '18.1.7',
   repository: 'https://charts.example.com',
@@ -24,125 +31,149 @@ const options: DependencyGeneratorSchema = {
 
 describe('dependency generator', () => {
   let tree: Tree;
-
-  const repositories = () =>
-    readProjectConfiguration(tree, 'test-project').targets?.['helm']?.options
-      ?.repositories;
-  const chartDependencies = () =>
-    parse(tree.read(chartYaml, 'utf8') ?? '').dependencies;
+  const dependencies = () =>
+    parse(tree.read(platform, 'utf8') ?? '').dependencies;
+  const repositories = (target = 'helm-package') =>
+    readJson(tree, 'charts/platform/project.json').targets[target].options
+      .repositories;
 
   beforeEach(async () => {
     tree = createTreeWithEmptyWorkspace();
-    addProjectConfiguration(tree, 'test-project', {
-      root: 'apps/test-project',
-    });
+    registerHelmPlugin(tree);
+    addProjectConfiguration(tree, 'frontend', { root: 'apps/frontend' });
     await chartGenerator(tree, {
-      project: 'test-project',
-      name: 'test-chart',
+      name: 'frontend',
+      project: 'frontend',
       skipFormat: true,
     });
+    tree.write(platform, 'apiVersion: v2\nname: platform\nversion: 1.0.0\n');
+    jest
+      .mocked(createProjectGraphAsync)
+      .mockResolvedValue(
+        chartProjectGraph(tree, ['apps/frontend/chart', 'charts/platform']),
+      );
   });
 
-  it('should add the repository to the project configuration', async () => {
-    await dependencyGenerator(tree, options);
+  it('should add a chart project as a file:// dependency', async () => {
+    await dependencyGenerator(tree, {
+      project: 'platform-chart',
+      chartProject: 'frontend-chart',
+      skipFormat: true,
+    });
 
-    expect(repositories()).toEqual([
-      { name: 'example', url: 'https://charts.example.com' },
+    expect(dependencies()).toEqual([
+      {
+        name: 'frontend',
+        version: '0.1.0',
+        repository: 'file://../../apps/frontend/chart',
+      },
     ]);
+    expect(tree.exists('charts/platform/project.json')).toBe(false);
   });
 
-  it('should add the dependency to Chart.yaml', async () => {
-    await dependencyGenerator(tree, options);
+  it('should add an oci:// dependency without a repository entry', async () => {
+    await dependencyGenerator(tree, {
+      project: 'platform-chart',
+      chartName: 'redis',
+      chartVersion: '20.0.0',
+      repository: 'oci://registry-1.docker.io/bitnamicharts',
+      skipFormat: true,
+    });
 
-    expect(chartDependencies()).toEqual([
+    expect(dependencies()).toHaveLength(1);
+    expect(tree.exists('charts/platform/project.json')).toBe(false);
+  });
+
+  it('should add https:// repositories to the chart targets', async () => {
+    await dependencyGenerator(tree, nginx);
+
+    expect(dependencies()).toEqual([
       {
         name: 'nginx',
         version: '18.1.7',
         repository: 'https://charts.example.com',
       },
     ]);
+    const options = {
+      options: {
+        repositories: [{ name: 'example', url: 'https://charts.example.com' }],
+      },
+    };
+    expect(readJson(tree, 'charts/platform/project.json')).toEqual({
+      name: 'platform-chart',
+      targets: {
+        'helm-package': options,
+        'helm-push': options,
+        'nx-release-publish': options,
+      },
+    });
   });
 
-  it('should update an existing dependency and save Chart.yaml', async () => {
-    await dependencyGenerator(tree, options);
+  it('should update an existing dependency and repository', async () => {
+    await dependencyGenerator(tree, nginx);
     await dependencyGenerator(tree, {
-      ...options,
+      ...nginx,
       chartVersion: '19.0.0',
       repository: 'https://mirror.example.com',
     });
 
-    expect(chartDependencies()).toEqual([
+    expect(dependencies()).toEqual([
       {
         name: 'nginx',
         version: '19.0.0',
         repository: 'https://mirror.example.com',
       },
     ]);
-  });
-
-  it('should not duplicate a repository with the same name', async () => {
-    await dependencyGenerator(tree, options);
-    await dependencyGenerator(tree, {
-      ...options,
-      chartName: 'redis',
-      repository: 'https://mirror.example.com',
-    });
-
-    expect(repositories()).toEqual([
+    expect(repositories('nx-release-publish')).toEqual([
       { name: 'example', url: 'https://mirror.example.com' },
-    ]);
-    expect(chartDependencies()).toHaveLength(2);
-  });
-
-  it('should work when the helm target has no repositories option', async () => {
-    const project = readProjectConfiguration(tree, 'test-project');
-    delete project.targets?.['helm']?.options?.repositories;
-    updateProjectConfiguration(tree, 'test-project', project);
-
-    await dependencyGenerator(tree, options);
-
-    expect(repositories()).toEqual([
-      { name: 'example', url: 'https://charts.example.com' },
     ]);
   });
 
   it('should keep comments in Chart.yaml', async () => {
-    tree.write(
-      chartYaml,
-      `${tree.read(chartYaml, 'utf8')}# keep this comment\n`,
-    );
+    tree.write(platform, `${tree.read(platform, 'utf8')}# keep this comment\n`);
 
-    await dependencyGenerator(tree, options);
+    await dependencyGenerator(tree, nginx);
 
-    expect(tree.read(chartYaml, 'utf8')).toContain('# keep this comment');
+    expect(tree.read(platform, 'utf8')).toContain('# keep this comment');
   });
 
-  it('should reject a chartFolder outside the project root', async () => {
-    const project = readProjectConfiguration(tree, 'test-project');
-    if (project.targets?.['helm']) {
-      project.targets['helm'].options.chartFolder = 'apps/other/chart';
-    }
-    updateProjectConfiguration(tree, 'test-project', project);
-
-    await expect(dependencyGenerator(tree, options)).rejects.toThrow(
-      'must be inside the project root',
-    );
+  it('should need a repositoryName for https:// repositories', async () => {
+    await expect(
+      dependencyGenerator(tree, { ...nginx, repositoryName: undefined }),
+    ).rejects.toThrow('needs a repositoryName');
   });
 
   it('should reject credentials in the repository URL', async () => {
     await expect(
       dependencyGenerator(tree, {
-        ...options,
+        ...nginx,
         repository: 'https://ci:s3cret@charts.example.com',
       }),
     ).rejects.toThrow('contains credentials');
   });
 
-  it('should require a helm target', async () => {
-    addProjectConfiguration(tree, 'no-helm', { root: 'apps/no-helm' });
-
+  it('should need a chart to depend on', async () => {
     await expect(
-      dependencyGenerator(tree, { ...options, project: 'no-helm' }),
-    ).rejects.toThrow('does not have a helm target');
+      dependencyGenerator(tree, {
+        project: 'platform-chart',
+        skipFormat: true,
+      }),
+    ).rejects.toThrow('or chartProject');
+  });
+
+  it('should not let a chart depend on itself', async () => {
+    await expect(
+      dependencyGenerator(tree, {
+        project: 'platform-chart',
+        chartProject: 'platform-chart',
+        skipFormat: true,
+      }),
+    ).rejects.toThrow("can't depend on itself");
+  });
+
+  it('should only add dependencies to chart projects', async () => {
+    await expect(
+      dependencyGenerator(tree, { ...nginx, project: 'frontend' }),
+    ).rejects.toThrow('is not a chart project');
   });
 });
