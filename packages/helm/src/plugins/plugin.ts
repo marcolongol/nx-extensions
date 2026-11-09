@@ -220,9 +220,6 @@ export const createNodes: CreateNodes<HelmPluginOptions> = [
   createNodesFunction,
 ];
 
-/** The same as `createNodes`, under the name Nx 22 looks for. */
-export const createNodesV2: CreateNodes<HelmPluginOptions> = createNodes;
-
 /**
  * Graph edges from a chart to the workspace charts in its Chart.yaml
  * dependencies: `file://` paths that point at one, or `oci://` dependencies

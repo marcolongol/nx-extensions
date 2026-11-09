@@ -291,7 +291,7 @@ importers:
   libs/core:
     dependencies:
       '@nx/devkit':
-        specifier: '>=22 <25'
+        specifier: '>=23 <25'
         version: 24.0.5(nx@24.0.5(@swc-node/register@1.12.1(@swc/core@1.16.22(@swc/helpers@0.5.24))(@swc/types@0.1.28)(supports-color@8.1.1)(typescript@6.0.3))(@swc/core@1.16.22(@swc/helpers@0.5.24)))
       tslib:
         specifier: ^2.3.0
@@ -303,13 +303,13 @@ importers:
         specifier: workspace:^
         version: link:../../libs/core
       '@nx/devkit':
-        specifier: '>=22 <25'
+        specifier: '>=23 <25'
         version: 24.0.5(nx@24.0.5(@swc-node/register@1.12.1(@swc/core@1.16.22(@swc/helpers@0.5.24))(@swc/types@0.1.28)(supports-color@8.1.1)(typescript@6.0.3))(@swc/core@1.16.22(@swc/helpers@0.5.24)))
       enquirer:
         specifier: ^2.4.1
         version: 2.4.1
       nx:
-        specifier: '>=22 <25'
+        specifier: '>=23 <25'
         version: 24.0.5(@swc-node/register@1.12.1(@swc/core@1.16.22(@swc/helpers@0.5.24))(@swc/types@0.1.28)(supports-color@8.1.1)(typescript@6.0.3))(@swc/core@1.16.22(@swc/helpers@0.5.24))
       tslib:
         specifier: ^2.3.0
