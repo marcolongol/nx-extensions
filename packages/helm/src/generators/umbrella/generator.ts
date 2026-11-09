@@ -84,10 +84,12 @@ export async function umbrellaGenerator(
       description: `Deploys ${subcharts.map((chart) => chart.name).join(', ')} together`,
       type: 'application',
       version: '0.1.0',
+      // condition: a subchart can be left out with --set <name>.enabled=false
       dependencies: subcharts.map(({ name, version, repository }) => ({
         name,
         version,
         repository,
+        condition: `${name}.enabled`,
       })),
     }),
   );
@@ -154,9 +156,9 @@ async function pickCharts(): Promise<string[]> {
 function valuesYaml(subcharts: { name: string }[]): string {
   return [
     '# Values for a subchart go under its name; values under global are passed',
-    '# to every subchart.',
+    '# to every subchart. Set <subchart>.enabled to false to leave one out.',
     'global: {}',
-    ...subcharts.flatMap(({ name }) => ['', `${name}: {}`]),
+    ...subcharts.flatMap(({ name }) => ['', `${name}:`, '  enabled: true']),
     '',
   ].join('\n');
 }

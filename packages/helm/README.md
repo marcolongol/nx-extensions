@@ -174,7 +174,7 @@ An umbrella chart bundles charts of the workspace, so one `helm install` deploys
 nx g @nx-extensions/helm:umbrella platform --charts=frontend-chart,backend-chart
 ```
 
-Leave out `--charts` to pick them from a list of the workspace's chart projects. This creates `charts/platform` (pick another folder with `--directory`) with the charts as `file://` subcharts at their current versions, and a `values.yaml` section for each:
+Leave out `--charts` to pick them from a list of the workspace's chart projects. This creates `charts/platform` (pick another folder with `--directory`) with the charts as `file://` subcharts at their current versions, and a `values.yaml` section for each. Every subchart has a `condition`, so it can be left out of an install with `--set frontend.enabled=false`:
 
 ```yaml
 # charts/platform/Chart.yaml
@@ -187,9 +187,11 @@ dependencies:
   - name: frontend
     version: 0.1.0
     repository: file://../../apps/frontend/chart
+    condition: frontend.enabled
   - name: backend
     version: 0.1.0
     repository: file://../../apps/backend/chart
+    condition: backend.enabled
 ```
 
 A chart that depends on other workspace charts, through `file://` paths or `oci://` dependencies with the name of a workspace chart, depends on them in the project graph too, so `platform-chart:helm-package` runs again when a subchart changes, and packages the subcharts into the umbrella. With `--publishSubcharts=false`, `nx release publish` only pushes the umbrella, see [Publishing charts](#publishing-charts).
