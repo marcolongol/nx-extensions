@@ -28,7 +28,8 @@ on:
         default: ''
         required: false
   schedule:
-    - cron: '0 * * * *' # Every hour
+    # Off the top of the hour, when GitHub drops many scheduled runs
+    - cron: '23 * * * *' # Every hour
   push:
     branches: ['main']
     paths:
@@ -37,9 +38,10 @@ on:
 
 permissions: {}
 
+# Let a running Renovate finish instead of cancelling it mid-update
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   LOG_LEVEL: "${{ inputs.logLevel || 'info' }}"

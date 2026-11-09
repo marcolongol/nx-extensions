@@ -5,6 +5,55 @@
     'github>marcolongol/renovate-config:automerge-minor.json5',
     // Updates `# renovate:` annotated versions in workflows (WORKFLOW_RENOVATE_VERSION)
     'customManagers:githubActionsVersions',
+    // Pin GitHub Actions to commit SHAs (the tag stays as a comment)
+    'helpers:pinGitHubActionDigests',
+    // Wait 3 days before proposing a new npm release, so a compromised
+    // release has a chance to be pulled before it can be automerged
+    'security:minimumReleaseAgeNpm',
+    ':maintainLockFilesWeekly',
   ],
   gitAuthor: 'marcolongol-bot <166586793+marcolongol-bot[bot]@users.noreply.github.com>',
+
+  // The shared default only rebases conflicted branches, but main requires
+  // branches to be up to date, so automerge stalled once a PR fell behind
+  rebaseWhen: 'behind-base-branch',
+
+  // Batch updates once a week instead of hourly, a few PRs at a time
+  schedule: ['before 6am on monday'],
+  prConcurrentLimit: 5,
+
+  packageRules: [
+    {
+      // Majors wait for approval on the Dependency Dashboard instead of
+      // piling up as PRs
+      matchUpdateTypes: ['major'],
+      dependencyDashboardApproval: true,
+    },
+    {
+      // Nx minors and majors ship migrations Renovate can't run; update
+      // them with `nx migrate` instead of automerging
+      matchPackageNames: ['nx', '@nx/**', 'create-nx-workspace'],
+      matchUpdateTypes: ['minor', 'major'],
+      automerge: false,
+    },
+    {
+      // The Nx monorepo group matches by repository URL, which also caught
+      // nrwl/nx-set-shas; keep actions in their own group
+      matchManagers: ['github-actions'],
+      groupName: 'GitHub Actions',
+    },
+    {
+      // Versioned and released by nx release
+      matchPackageNames: ['@nx-extensions/**'],
+      enabled: false,
+    },
+    {
+      // Workspace tooling isn't shipped to users: keep it out of the
+      // packages' changelogs (chore instead of fix) and don't mark its
+      // majors as breaking changes
+      matchFileNames: ['package.json', '.github/**', '.nvmrc'],
+      semanticCommitType: 'chore',
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}}):',
+    },
+  ],
 }
