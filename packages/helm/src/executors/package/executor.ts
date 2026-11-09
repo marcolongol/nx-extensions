@@ -1,14 +1,29 @@
-import path from 'node:path';
+import * as path from 'node:path';
 
-import { PromiseExecutor, ExecutorContext } from '@nx/devkit';
-import { createHelmClient, resolvePathInside } from '@nx-extensions/core';
+import { PromiseExecutor, ExecutorContext, logger } from '@nx/devkit';
+import { resolvePathInside } from '@nx-extensions/core';
 
 import { PackageExecutorSchema } from './schema.d';
+import { createHelmClient } from '../../utils/helm';
+import { checkRepositoryUrl } from '../../utils/repository';
 
 const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
   options: PackageExecutorSchema,
   context: ExecutorContext,
 ) => {
+  try {
+    await packageChart(options, context);
+    return { success: true };
+  } catch (error) {
+    logger.error(error instanceof Error ? error.message : String(error));
+    return { success: false };
+  }
+};
+
+async function packageChart(
+  options: PackageExecutorSchema,
+  context: ExecutorContext,
+) {
   // Nx runs executors from the directory `nx` was started in, so resolve the
   // options against the workspace root instead of the current directory
   const chartFolder = resolvePathInside(
@@ -38,21 +53,34 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
         `Each dependencies.repositories entry needs a name and a url, got ${JSON.stringify(repository)}.`,
       );
     }
-    return { name: repository.name, url: repository.url };
+    return {
+      name: repository.name,
+      url: repository.url,
+      kind: checkRepositoryUrl(repository.url),
+      username: repository.username,
+      password: readPassword(repository.name, repository.passwordEnv),
+    };
   });
 
-  const helm = createHelmClient();
+  const helm = createHelmClient({ env: helmEnv(context.root) });
 
   for (const repository of repositories) {
-    await helm.addRepository(repository.name, repository.url);
+    // OCI and local file dependencies are resolved without a repository entry
+    if (repository.kind === 'oci' || repository.kind === 'file') {
+      continue;
+    }
+    await helm.addRepository(repository.name, repository.url, {
+      username: repository.username,
+      password: repository.password,
+    });
   }
 
+  const dependencyOptions = { plainHttp: options.plainHttp };
   if (dependencies.update ?? true) {
-    await helm.dependencyUpdate(chartFolder);
+    await helm.dependencyUpdate(chartFolder, dependencyOptions);
   }
-
   if (dependencies.build ?? false) {
-    await helm.dependencyBuild(chartFolder);
+    await helm.dependencyBuild(chartFolder, dependencyOptions);
   }
 
   const chartPath = await helm.package({
@@ -63,19 +91,52 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
   });
 
   if (options.push) {
-    if (!chartPath) {
-      throw new Error('Could not determine the packaged chart path.');
-    }
     await helm.push({
       chartPath,
       remote,
       plainHttp: options.plainHttp,
     });
   }
+}
 
+function readPassword(
+  repository: string,
+  passwordEnv: string | undefined,
+): string | undefined {
+  if (!passwordEnv) {
+    return undefined;
+  }
+  const password = process.env[passwordEnv];
+  if (!password) {
+    throw new Error(
+      `Environment variable ${passwordEnv} for the password of repository "${repository}" is not set.`,
+    );
+  }
+  return password;
+}
+
+/**
+ * Keeps the repositories the executor adds out of the user's global Helm
+ * config, in a cache folder that is never committed. A HELM_REPOSITORY_CONFIG
+ * or HELM_REPOSITORY_CACHE the user set wins.
+ */
+function helmEnv(workspaceRoot: string): NodeJS.ProcessEnv {
+  const cache = path.join(
+    workspaceRoot,
+    'node_modules',
+    '.cache',
+    '@nx-extensions',
+    'helm',
+  );
   return {
-    success: true,
+    ...process.env,
+    HELM_REPOSITORY_CONFIG:
+      process.env['HELM_REPOSITORY_CONFIG'] ??
+      path.join(cache, 'repositories.yaml'),
+    HELM_REPOSITORY_CACHE:
+      process.env['HELM_REPOSITORY_CACHE'] ??
+      path.join(cache, 'repository-cache'),
   };
-};
+}
 
 export default runExecutor;

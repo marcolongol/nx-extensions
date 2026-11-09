@@ -14,9 +14,9 @@ export interface PackageExecutorSchema {
   /** Remote registry to publish the chart */
   remote?: string;
   /**
-   * Use insecure HTTP connections when pushing the chart (`helm push
-   * --plain-http`). Helm v4 requires this for registries without TLS, including
-   * localhost.
+   * Use plain HTTP instead of TLS for OCI registries: when pushing the chart
+   * and when downloading OCI dependencies. Helm v4 needs this for registries
+   * without TLS, including localhost.
    */
   plainHttp?: boolean;
   /** Overwrite the version of the chart for packaging */
@@ -33,8 +33,18 @@ export interface PackageExecutorSchema {
     repositories?: {
       /** Name of the repository */
       name?: string;
-      /** URL of the repository */
+      /**
+       * URL of the repository (https://, http://, oci:// or file://). Must not
+       * contain credentials; use username and passwordEnv.
+       */
       url?: string;
+      /** Username for a repository that needs authentication */
+      username?: string;
+      /**
+       * Name of the environment variable that holds the repository password. It
+       * is passed to helm through stdin, never on the command line.
+       */
+      passwordEnv?: string;
       [k: string]: unknown;
     }[];
     [k: string]: unknown;

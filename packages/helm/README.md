@@ -127,6 +127,25 @@ dependencies:
 
 The package executor will automatically run `helm repo add` for each repository defined in the `repositories` array before packaging the chart.
 
+- Repositories are added to a Helm repository config inside the workspace (`node_modules/.cache/@nx-extensions/helm`), not to your global one. Declare every repository your chart needs in `repositories`, or set `HELM_REPOSITORY_CONFIG` to use your own config.
+- `oci://` and `file://` dependencies don't need a repository entry and are not added.
+- Plain `http://` repositories work, but print a warning, since their charts could be tampered with on the way.
+
+#### Repositories that need authentication
+
+Don't put credentials in the repository URL; the generator and executor reject URLs like `https://user:pass@charts.example.com`. Set a `username` and the name of an environment variable that holds the password instead. The executor passes the password to `helm repo add --password-stdin`, so it never appears in `project.json`, the command line or the logs.
+
+```json
+"repositories": [
+  {
+    "name": "private",
+    "url": "https://charts.example.com",
+    "username": "ci",
+    "passwordEnv": "CHARTS_PASSWORD"
+  }
+]
+```
+
 ### Build and package your Helm chart
 
 To build and package your Helm chart, you can use the nx run command to execute the `helm` target defined in your project:
@@ -175,7 +194,7 @@ By default the executor options will default to `push: false` and `remote: oci:/
 
 #### Registries without TLS
 
-Helm v4 only uses plain HTTP when asked to, even for `localhost`. To push to a registry without TLS, such as a local `registry:2` container, set `plainHttp: true`. The executor then runs `helm push --plain-http`.
+Helm v4 only uses plain HTTP when asked to, even for `localhost`. To use an OCI registry without TLS, such as a local `registry:3` container, set `plainHttp: true`. The executor then passes `--plain-http` to `helm push`, and to `helm dependency update` and `helm dependency build` for OCI dependencies.
 
 ```diff
       "options": {

@@ -44,7 +44,7 @@
     },
     "plainHttp": {
       "type": "boolean",
-      "description": "Use insecure HTTP connections when pushing the chart (`helm push --plain-http`). Helm v4 requires this for registries without TLS, including localhost.",
+      "description": "Use plain HTTP instead of TLS for OCI registries: when pushing the chart (`helm push --plain-http`) and when downloading OCI dependencies (`helm dependency update/build --plain-http`). Helm v4 needs this for registries without TLS, including localhost.",
       "default": false
     },
     "version": {
@@ -88,7 +88,7 @@
           },
           "items": {
             "type": "object",
-            "description": "Repository to add",
+            "description": "Repository to add with `helm repo add` before packaging. oci:// and file:// repositories are used directly and not added.",
             "$default": {
               "$source": "argv",
               "index": 7
@@ -105,12 +105,20 @@
               },
               "url": {
                 "type": "string",
-                "description": "URL of the repository",
+                "description": "URL of the repository (https://, http://, oci:// or file://). Must not contain credentials; use username and passwordEnv.",
                 "$default": {
                   "$source": "argv",
                   "index": 9
                 },
                 "x-prompt": "Provide the repository URL"
+              },
+              "username": {
+                "type": "string",
+                "description": "Username for a repository that needs authentication"
+              },
+              "passwordEnv": {
+                "type": "string",
+                "description": "Name of the environment variable that holds the repository password. It is passed to helm through stdin, never on the command line."
               }
             }
           },
