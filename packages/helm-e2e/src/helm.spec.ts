@@ -365,9 +365,8 @@ describe('helm', () => {
   }
 
   /**
-   * Creates a test workspace with the repo's own create-nx-workspace
-   *
-   * @returns The directory where the test workspace was created
+   * Creates a test workspace with the repo's own create-nx-workspace and
+   * returns its directory.
    */
   function createTestWorkspace(parentDirectory: string) {
     const workspaceName = 'test-workspace';
@@ -394,11 +393,7 @@ describe('helm', () => {
     return directory;
   }
 
-  /**
-   * Creates a test project in the test workspace
-   *
-   * @returns The directory where the test project was created
-   */
+  /** Creates a test project in the test workspace and returns its directory. */
   function createTestProject(workspace: string) {
     const directory = join(workspace, 'apps', 'test-project');
 

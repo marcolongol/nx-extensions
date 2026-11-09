@@ -9,9 +9,6 @@ export type RepositoryKind = 'oci' | 'file' | 'http' | 'https';
  *   Chart.yaml. Use the repository's `username` and `passwordEnv`.
  * - Plain `http://` works, but logs a warning: anyone on the network path could
  *   swap the charts.
- *
- * @param {string} url
- * @returns {RepositoryKind}
  */
 export function checkRepositoryUrl(url: string): RepositoryKind {
   let parsed: URL;

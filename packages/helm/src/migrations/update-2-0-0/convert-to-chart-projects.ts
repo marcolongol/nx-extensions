@@ -25,7 +25,7 @@ import {
 } from '../../utils/workspace';
 
 const PACKAGE_EXECUTOR = '@nx-extensions/helm:package';
-/** The outputFolder the chart generator used to write. */
+/** The outputFolder written by the 1.x chart generator. */
 const GENERATED_OUTPUT_FOLDER = '{workspaceRoot}/dist/charts/{projectRoot}';
 
 interface Conversion {

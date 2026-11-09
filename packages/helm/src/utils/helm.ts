@@ -28,11 +28,7 @@ export interface HelmClientOptions {
 export class HelmClient {
   constructor(private readonly options: HelmClientOptions = {}) {}
 
-  /**
-   * Packages a chart directory into a chart archive.
-   *
-   * @returns {Promise<string>} The path of the packaged chart
-   */
+  /** Packages a chart directory into a chart archive and returns its path. */
   async package(options: PackageOptions): Promise<string> {
     const { stdout } = await this.helm(
       ['package'],

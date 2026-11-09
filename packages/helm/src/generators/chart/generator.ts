@@ -22,9 +22,6 @@ import {
 /**
  * Turns a name into a valid chart name. Helm uses the chart name in resource
  * names, and Services need a DNS-1035 label: lowercase alphanumerics and `-`.
- *
- * @param {string} name
- * @returns {string}
  */
 export function toChartName(name: string): string {
   const chartName = name
