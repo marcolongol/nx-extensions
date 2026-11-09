@@ -1,0 +1,248 @@
+import { existsSync, readFileSync } from 'node:fs';
+import * as path from 'node:path';
+
+import {
+  CreateDependencies,
+  CreateNodes,
+  CreateNodesContext,
+  CreateNodesResult,
+  DependencyType,
+  logger,
+  normalizePath,
+  RawProjectGraphDependency,
+  TargetConfiguration,
+} from '@nx/devkit';
+import { parse } from 'yaml';
+
+import { PackageExecutorSchema } from '../executors/package/schema.d';
+
+export interface HelmPluginOptions {
+  /** Name of the chart projects; `{chartName}` is the `name` in Chart.yaml. */
+  projectName?: string;
+  /** Name of the target that packages the chart. */
+  packageTargetName?: string;
+  /** Name of the target that packages and pushes the chart. */
+  pushTargetName?: string;
+  /** Where packaged charts go. */
+  outputFolder?: string;
+  /** OCI registry the push target pushes to, e.g. `oci://ghcr.io/my-org/charts`. */
+  remote?: string;
+  /** Use plain HTTP for OCI registries without TLS. */
+  plainHttp?: boolean;
+}
+
+interface Chart {
+  name?: unknown;
+  dependencies?: { name?: unknown; repository?: unknown }[];
+}
+
+const PACKAGE_EXECUTOR = '@nx-extensions/helm:package';
+const CHART_FILE = 'Chart.yaml';
+
+const defaults = {
+  projectName: '{chartName}-chart',
+  packageTargetName: 'helm-package',
+  pushTargetName: 'helm-push',
+  outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
+} satisfies HelmPluginOptions;
+
+function readChart(workspaceRoot: string, chartFile: string): Chart | null {
+  try {
+    return (parse(readFileSync(path.join(workspaceRoot, chartFile), 'utf8')) ??
+      null) as Chart | null;
+  } catch (error) {
+    logger.warn(
+      `@nx-extensions/helm: skipping ${chartFile}, which is not valid YAML: ${error instanceof Error ? error.message : error}`,
+    );
+    return null;
+  }
+}
+
+/**
+ * Whether a Chart.yaml should not become a project: vendored subcharts in
+ * another chart's `charts/` folder, and files under `node_modules` or `dist`.
+ */
+function isIgnored(workspaceRoot: string, chartFile: string): boolean {
+  const segments = chartFile.split('/');
+  if (segments.includes('node_modules') || segments[0] === 'dist') {
+    return true;
+  }
+  const chartsFolder = path.posix.dirname(path.posix.dirname(chartFile));
+  return (
+    path.posix.basename(chartsFolder) === 'charts' &&
+    existsSync(
+      path.join(workspaceRoot, path.posix.dirname(chartsFolder), CHART_FILE),
+    )
+  );
+}
+
+/**
+ * Whether a project already packages this chart with a `helm` target from the
+ * chart generator, found in the nearest project.json or package.json above it.
+ */
+function hasGeneratedTarget(workspaceRoot: string, chartRoot: string): boolean {
+  let dir = chartRoot;
+  while (true) {
+    for (const file of ['project.json', 'package.json']) {
+      const configPath = path.join(workspaceRoot, dir, file);
+      if (!existsSync(configPath)) continue;
+      let config: { targets?: unknown; nx?: { targets?: unknown } };
+      try {
+        config = JSON.parse(readFileSync(configPath, 'utf8'));
+      } catch {
+        continue;
+      }
+      const targets = (
+        file === 'project.json' ? config.targets : config.nx?.targets
+      ) as
+        | Record<string, TargetConfiguration<Partial<PackageExecutorSchema>>>
+        | undefined;
+      const packagesChart = Object.values(targets ?? {}).some(
+        (target) =>
+          target.executor === PACKAGE_EXECUTOR &&
+          typeof target.options?.chartFolder === 'string' &&
+          normalizePath(
+            path.posix.normalize(
+              target.options.chartFolder.replace('{projectRoot}', dir),
+            ),
+          ) === chartRoot,
+      );
+      if (packagesChart) {
+        return true;
+      }
+    }
+    if (dir === '.' || dir === '') {
+      return false;
+    }
+    dir = path.posix.dirname(dir);
+  }
+}
+
+function chartProject(
+  chartRoot: string,
+  chartName: string,
+  options: Required<Omit<HelmPluginOptions, 'remote' | 'plainHttp'>> &
+    Pick<HelmPluginOptions, 'remote' | 'plainHttp'>,
+): CreateNodesResult {
+  const packageOptions: PackageExecutorSchema = {
+    chartFolder: '{projectRoot}',
+    outputFolder: options.outputFolder,
+  };
+  return {
+    projects: {
+      [chartRoot]: {
+        name: options.projectName.replace('{chartName}', chartName),
+        tags: ['helm-chart'],
+        metadata: { technologies: ['helm'] },
+        targets: {
+          [options.packageTargetName]: {
+            executor: PACKAGE_EXECUTOR,
+            cache: true,
+            // ^default: an umbrella chart packages its file:// subcharts too
+            inputs: ['default', '^default'],
+            outputs: ['{options.outputFolder}'],
+            options: packageOptions,
+            metadata: { description: `Package the ${chartName} Helm chart` },
+          },
+          [options.pushTargetName]: {
+            executor: PACKAGE_EXECUTOR,
+            options: {
+              ...packageOptions,
+              push: true,
+              ...(options.remote ? { remote: options.remote } : {}),
+              ...(options.plainHttp ? { plainHttp: true } : {}),
+            },
+            metadata: {
+              description: `Package the ${chartName} Helm chart and push it to an OCI registry`,
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
+const createNodesFunction: CreateNodes<HelmPluginOptions>[1] = async (
+  chartFiles,
+  userOptions,
+  context: CreateNodesContext,
+) => {
+  const options = { ...defaults, ...userOptions };
+  const results: [string, CreateNodesResult][] = [];
+  for (const chartFile of chartFiles) {
+    if (isIgnored(context.workspaceRoot, chartFile)) continue;
+    const chartRoot = path.posix.dirname(chartFile);
+    if (hasGeneratedTarget(context.workspaceRoot, chartRoot)) continue;
+
+    const chart = readChart(context.workspaceRoot, chartFile);
+    if (typeof chart?.name !== 'string' || !chart.name) {
+      if (chart) {
+        logger.warn(
+          `@nx-extensions/helm: skipping ${chartFile}, which has no name`,
+        );
+      }
+      continue;
+    }
+    results.push([chartFile, chartProject(chartRoot, chart.name, options)]);
+  }
+  return results;
+};
+
+const pattern = `**/${CHART_FILE}`;
+
+/** Inferred chart projects, one per Chart.yaml. */
+export const createNodes: CreateNodes<HelmPluginOptions> = [
+  pattern,
+  createNodesFunction,
+];
+
+/** The same as `createNodes`, under the name Nx 22 looks for. */
+export const createNodesV2: CreateNodes<HelmPluginOptions> = createNodes;
+
+/**
+ * Graph edges from a chart to the workspace charts in its Chart.yaml
+ * dependencies: `file://` paths that point at one, or `oci://` dependencies
+ * with the name of one.
+ */
+export const createDependencies: CreateDependencies<HelmPluginOptions> = (
+  _options,
+  context,
+) => {
+  const charts = Object.entries(context.projects).flatMap(
+    ([project, config]) => {
+      const chartFile = path.posix.join(config.root, CHART_FILE);
+      if (!existsSync(path.join(context.workspaceRoot, chartFile))) return [];
+      const chart = readChart(context.workspaceRoot, chartFile);
+      return chart ? [{ project, root: config.root, chartFile, chart }] : [];
+    },
+  );
+  const byRoot = new Map(charts.map((c) => [c.root, c.project]));
+  const byName = new Map(charts.map((c) => [c.chart.name, c.project]));
+
+  const dependencies: RawProjectGraphDependency[] = [];
+  for (const { project, root, chartFile, chart } of charts) {
+    for (const dependency of chart.dependencies ?? []) {
+      const repository =
+        typeof dependency.repository === 'string' ? dependency.repository : '';
+      let target: string | undefined;
+      if (repository.startsWith('file://')) {
+        target = byRoot.get(
+          path.posix.normalize(
+            path.posix.join(root, repository.slice('file://'.length)),
+          ),
+        );
+      } else if (repository.startsWith('oci://')) {
+        target = byName.get(dependency.name);
+      }
+      if (target && target !== project) {
+        dependencies.push({
+          source: project,
+          target,
+          type: DependencyType.static,
+          sourceFile: chartFile,
+        });
+      }
+    }
+  }
+  return dependencies;
+};

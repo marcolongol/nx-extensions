@@ -181,6 +181,69 @@ You can also pass it for a single run:
 nx run my-app:helm --push --plainHttp
 ```
 
+## Chart projects
+
+Instead of adding a `helm` target to an app, the plugin can turn every Helm chart in the workspace into its own Nx project. Register it in `nx.json`:
+
+```json
+{
+  "plugins": [
+    {
+      "plugin": "@nx-extensions/helm",
+      "options": {
+        "remote": "oci://ghcr.io/my-org/charts"
+      }
+    }
+  ]
+}
+```
+
+Every `Chart.yaml` then becomes a project named `<chart name>-chart` and tagged `helm-chart`, for example `apps/my-app/chart` → `my-app-chart`. A chart inside an app's folder is its own project: changing the chart doesn't affect the app, and the other way round. These are skipped:
+
+- vendored subcharts in another chart's `charts/` folder
+- anything under `node_modules` or `dist`
+- charts that a project already packages with a `helm` target from the chart generator
+
+Each chart project gets two targets:
+
+| Target         | Description                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `helm-package` | Packages the chart into `dist/charts/<chart folder>`. Cached: it only runs again when the chart, or a chart it depends on, changes. |
+| `helm-push`    | Packages the chart and pushes it to `remote`.                                                                                       |
+
+Both use the [package executor](#build-and-package-your-helm-chart), so its options can be set per run, e.g. `nx run my-app-chart:helm-push --chartVersion=1.2.3`.
+
+Plugin options:
+
+| Option              | Default                                     | Description                                                            |
+| ------------------- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| `projectName`       | `{chartName}-chart`                         | Name of the chart projects; `{chartName}` is the `name` in Chart.yaml. |
+| `packageTargetName` | `helm-package`                              | Name of the package target.                                            |
+| `pushTargetName`    | `helm-push`                                 | Name of the push target.                                               |
+| `outputFolder`      | `{workspaceRoot}/dist/charts/{projectRoot}` | Where packaged charts go.                                              |
+| `remote`            |                                             | OCI registry for the push target.                                      |
+| `plainHttp`         | `false`                                     | Use plain HTTP for OCI registries without TLS.                         |
+
+### Umbrella charts
+
+A chart that depends on other charts in the workspace, through `file://` paths or `oci://` dependencies with the name of a workspace chart, depends on them in the project graph too. So an umbrella chart that combines a frontend and a backend is rebuilt when either changes:
+
+```yaml
+# charts/platform/Chart.yaml
+apiVersion: v2
+name: platform
+version: 1.4.0
+dependencies:
+  - name: frontend
+    version: 2.1.0
+    repository: file://../../apps/frontend/chart
+  - name: backend
+    version: 3.0.2
+    repository: file://../../apps/backend/chart
+```
+
+`helm-package` on the umbrella builds its `file://` subcharts into its `charts/` folder before packaging, so the packaged umbrella contains them. Add `charts/*/charts/*.tgz` (or wherever your umbrellas live) to `.gitignore`.
+
 ## Upgrading from 1.x
 
 2.0.0 renames and flattens the executor options. Run `nx migrate @nx-extensions/helm@latest` and then `nx migrate --run-migrations` to update your `helm` targets and `targetDefaults`:
