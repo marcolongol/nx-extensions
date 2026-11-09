@@ -24,8 +24,8 @@ on:
         required: false
       version:
         type: string
-        description: Renovate version
-        default: latest
+        description: Renovate version (defaults to the pinned major)
+        default: ''
         required: false
   schedule:
     - cron: '0 * * * *' # Every hour
@@ -35,54 +35,73 @@ on:
       - .github/renovate.json5
       - .github/renovate/**.json5
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
 env:
-  LOG_LEVEL: "${{ inputs.logLevel || 'debug' }}"
+  LOG_LEVEL: "${{ inputs.logLevel || 'info' }}"
   RENOVATE_AUTODISCOVER: true
   RENOVATE_AUTODISCOVER_FILTER: '${{ github.repository }}'
   RENOVATE_BASE_BRANCHES: main
   RENOVATE_DRY_RUN: '${{ inputs.dryRun == true }}'
   RENOVATE_PLATFORM: github
   RENOVATE_PLATFORM_COMMIT: true
-  WORKFLOW_RENOVATE_VERSION: "${{ inputs.version || 'latest' }}"
-  OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
-  OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+  # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
+  WORKFLOW_RENOVATE_VERSION: '44'
 
 jobs:
   renovate:
     name: Renovate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: 1password/load-secrets-action/configure@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5
+      # Secrets are step outputs instead of exported env, so later steps
+      # (including the Renovate container) never see the App private key or
+      # the Connect token.
+      - name: Load secrets
+        id: op
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5
         with:
-          connect-host: ${{ env.OP_CONNECT_HOST }}
-          connect-token: ${{ env.OP_CONNECT_TOKEN }}
-
-      - uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5
-        with:
-          export-env: true
+          export-env: false
+          # 1Password CLI has no Renovate datasource; bump manually
+          version: '2.42.0'
         env:
+          OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
           BOT_APP_ID: op://homelab/GITHUB/GITHUB_APP_ID
           BOT_APP_PRIVATE_KEY: op://homelab/GITHUB/GITHUB_APP_PRIVATE_KEY
 
+      # Only the permissions Renovate documents for GitHub Apps, scoped to
+      # this repository, whatever the App itself is granted.
       - name: Generate Token
         uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          app-id: '${{ env.BOT_APP_ID }}'
-          private-key: '${{ env.BOT_APP_PRIVATE_KEY }}'
+          app-id: '${{ steps.op.outputs.BOT_APP_ID }}'
+          private-key: '${{ steps.op.outputs.BOT_APP_PRIVATE_KEY }}'
+          permission-administration: read
+          permission-checks: write
+          permission-contents: write
+          permission-issues: write
+          permission-metadata: read
+          permission-pull-requests: write
+          permission-statuses: write
+          permission-vulnerability-alerts: read
+          permission-workflows: write
 
+      # Only needed to read the config file; Renovate clones on its own
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          token: '${{ steps.app-token.outputs.token }}'
+          persist-credentials: false
 
       - name: Renovate
         uses: renovatebot/github-action@v46.3.10
         with:
           configurationFile: .github/renovate.json5
           token: '${{ steps.app-token.outputs.token }}'
-          renovate-version: '${{ env.WORKFLOW_RENOVATE_VERSION }}'
+          renovate-version: '${{ inputs.version || env.WORKFLOW_RENOVATE_VERSION }}'
