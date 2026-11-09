@@ -1,4 +1,7 @@
-/** Options of the `@nx-extensions/helm:package` executor; see schema.json. */
+/**
+ * Options of the `@nx-extensions/helm:package` executor; keep in sync with
+ * schema.json.
+ */
 
 export interface HelmRepository {
   /** Name of the repository. */

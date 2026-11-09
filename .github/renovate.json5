@@ -15,7 +15,7 @@
   gitAuthor: 'marcolongol-bot <166586793+marcolongol-bot[bot]@users.noreply.github.com>',
 
   // The shared default only rebases conflicted branches, but main requires
-  // branches to be up to date, so automerge stalled once a PR fell behind
+  // up-to-date branches, so automerge would stall once a PR falls behind
   rebaseWhen: 'behind-base-branch',
 
   // Batch updates once a week instead of hourly, a few PRs at a time
@@ -37,7 +37,7 @@
       automerge: false,
     },
     {
-      // The Nx monorepo group matches by repository URL, which also caught
+      // The Nx monorepo group matches by repository URL, which includes
       // nrwl/nx-set-shas; keep actions in their own group
       matchManagers: ['github-actions'],
       groupName: 'GitHub Actions',
