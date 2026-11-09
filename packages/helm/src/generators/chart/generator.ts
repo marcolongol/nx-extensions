@@ -86,7 +86,12 @@ export async function chartGenerator(
   // Packaged dependencies that helm dependency build/update download
   addToGitIgnore(tree, [`/${joinPathFragments(chartRoot, 'charts')}/*.tgz`]);
 
-  const projectName = chartProjectName(pluginOptions, chartName);
+  const projectName = chartProjectName(
+    tree,
+    pluginOptions,
+    chartRoot,
+    chartName,
+  );
   logger.info(
     `The ${chartName} chart is the project ${projectName}; package it with \`nx run ${projectName}:${chartTargetNames(pluginOptions).package}\`.`,
   );

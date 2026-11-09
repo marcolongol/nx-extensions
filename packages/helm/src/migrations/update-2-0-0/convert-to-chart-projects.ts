@@ -74,7 +74,12 @@ export default async function update(tree: Tree) {
       targets: rest,
     });
 
-    const chartProject = chartProjectName(pluginOptions, chartName);
+    const chartProject = chartProjectName(
+      tree,
+      pluginOptions,
+      chartRoot,
+      chartName,
+    );
     logger.info(
       `${project.name}:${targetName} is now the chart project ${chartProject}: run ${chartProject}:${conversion.options.push ? targets.push : targets.package}.`,
     );

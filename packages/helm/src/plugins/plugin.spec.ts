@@ -182,6 +182,33 @@ describe('helm plugin', () => {
     expect(Object.keys(projects)).toEqual(['charts/platform/Chart.yaml']);
   });
 
+  it('names chart projects after the project they sit in with {projectName}', async () => {
+    write('package.json', JSON.stringify({ name: '@org/source' }));
+    write('apps/web.app/package.json', JSON.stringify({ name: 'web.app' }));
+    write(
+      'apps/api/project.json',
+      JSON.stringify({ name: 'my-api', targets: {} }),
+    );
+    chart('apps/web.app/chart/Chart.yaml', 'web-app');
+    chart('apps/api/deploy/chart/Chart.yaml', 'api');
+    chart('charts/platform/Chart.yaml', 'platform');
+
+    const projects = await run(
+      [
+        'apps/web.app/chart/Chart.yaml',
+        'apps/api/deploy/chart/Chart.yaml',
+        'charts/platform/Chart.yaml',
+      ],
+      { projectName: '{projectName}-chart' },
+    );
+
+    expect(
+      Object.values(projects).flatMap((result) =>
+        Object.values(result ?? {}).map((project) => project.name),
+      ),
+    ).toEqual(['web.app-chart', 'my-api-chart', 'platform-chart']);
+  });
+
   it('skips and warns about charts without a name or with invalid YAML', async () => {
     const warn = jest.spyOn(logger, 'warn').mockImplementation(() => undefined);
     write('a/Chart.yaml', 'apiVersion: v2\nversion: 0.1.0\n');
@@ -263,6 +290,8 @@ describe('helm plugin', () => {
         'platform-chart': 'charts/platform',
         frontend: 'apps/frontend',
         apps: 'apps',
+        // The workspace root project contains every chart, but isn't an app
+        '@org/source': '.',
       };
 
       expect(

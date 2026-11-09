@@ -106,7 +106,7 @@ export async function umbrellaGenerator(
     }
   }
 
-  const projectName = chartProjectName(pluginOptions, name);
+  const projectName = chartProjectName(tree, pluginOptions, root, name);
   logger.info(
     `The umbrella chart is the project ${projectName}; package it with \`nx run ${projectName}:${chartTargetNames(pluginOptions).package}\`.`,
   );

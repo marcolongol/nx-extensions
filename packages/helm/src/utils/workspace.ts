@@ -11,6 +11,7 @@ import {
 } from '@nx/devkit';
 import { parse } from 'yaml';
 
+import { resolveChartProjectName } from './project-name';
 import { defaultPluginOptions, HelmPluginOptions } from '../plugins/plugin';
 
 export const PLUGIN_NAME = '@nx-extensions/helm';
@@ -110,14 +111,18 @@ export function addToGitIgnore(tree: Tree, entries: string[]) {
   tree.write('.gitignore', `${content}${prefix}${missing.join('\n')}\n`);
 }
 
-/** The name the plugin gives the project of a chart. */
+/** The name the plugin gives the project of the chart in `chartRoot`. */
 export function chartProjectName(
+  tree: Tree,
   options: HelmPluginOptions,
+  chartRoot: string,
   chartName: string,
 ) {
-  return (options.projectName ?? '{chartName}-chart').replace(
-    '{chartName}',
+  return resolveChartProjectName(
+    options.projectName ?? '{chartName}-chart',
     chartName,
+    chartRoot,
+    (file) => (tree.exists(file) ? tree.read(file, 'utf8') : null),
   );
 }
 
@@ -150,7 +155,9 @@ export function updateChartTargetOptions(
   } = tree.exists(file) ? readJson(tree, file) : {};
   const config = {
     name: chartProjectName(
+      tree,
       readHelmPluginOptions(tree) ?? {},
+      chartRoot,
       readChartMetadata(tree, chartRoot).name,
     ),
     ...existing,

@@ -99,7 +99,7 @@ Plugin options, in the plugin's entry in `nx.json`:
 
 | Option               | Default                                     | Description                                                                                                                                                                                                  |
 | -------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `projectName`        | `{chartName}-chart`                         | Name of the chart projects; `{chartName}` is the `name` in Chart.yaml.                                                                                                                                       |
+| `projectName`        | `{chartName}-chart`                         | Name of the chart projects. `{chartName}` is the `name` in Chart.yaml; `{projectName}` is the project the chart sits in, or the chart name for a chart outside any project, such as an umbrella.             |
 | `packageTargetName`  | `helm-package`                              | Name of the package target.                                                                                                                                                                                  |
 | `pushTargetName`     | `helm-push`                                 | Name of the push target.                                                                                                                                                                                     |
 | `lintTargetName`     | `helm-lint`                                 | Name of the lint target.                                                                                                                                                                                     |
@@ -108,6 +108,8 @@ Plugin options, in the plugin's entry in `nx.json`:
 | `remote`             |                                             | OCI registry for the push target.                                                                                                                                                                            |
 | `plainHttp`          | `false`                                     | Use plain HTTP for OCI registries without TLS.                                                                                                                                                               |
 | `appVersion`         | `none`                                      | `project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion`. See [Versioning charts](#versioning-charts-with-nx-release). |
+
+Chart names can't contain dots, since Kubernetes resource names are built from them, so the chart of an app called `my.app` is named `my-app`, and its project `my-app-chart`. To name chart projects after their app instead, set `"projectName": "{projectName}-chart"`: the chart in `apps/my.app` becomes `my.app-chart`, and an umbrella in `charts/platform` stays `platform-chart`. Each app can then only have one chart, or their names clash. Renaming chart projects changes their release tags, so pick the pattern before the first release.
 
 ### Target options
 
