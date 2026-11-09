@@ -1,12 +1,20 @@
 import {
   Tree,
   addProjectConfiguration,
+  formatFiles,
   readProjectConfiguration,
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 
-import { chartGenerator } from './generator';
+import { chartGenerator, toChartName } from './generator';
 import { ChartGeneratorSchema } from './schema.d';
+
+jest.mock('@nx/devkit', () => ({
+  ...jest.requireActual('@nx/devkit'),
+  formatFiles: jest.fn(),
+}));
+
+const formatFilesSpy = jest.mocked(formatFiles);
 
 describe('chart generator', () => {
   let tree: Tree;
@@ -23,7 +31,7 @@ describe('chart generator', () => {
     };
 
     addProjectConfiguration(tree, options.project, {
-      root: `'${options.project}'`,
+      root: `apps/${options.project}`,
     });
 
     await chartGenerator(tree, options);
@@ -60,30 +68,37 @@ describe('chart generator', () => {
     expect(ingress).not.toContain('v1beta1');
   });
 
-  it('should throw an error if the project already has a helm target', async () => {
-    try {
-      await chartGenerator(tree, options);
-    } catch (error) {
-      expect(error.message).toBe(
-        `Project ${options.project} already has a helm target. Please remove it before running this command.`,
-      );
-    }
+  it('should add the chart templates to .prettierignore', async () => {
+    expect(tree.read('.prettierignore', 'utf8')).toContain(
+      '/apps/test-project/chart/templates\n',
+    );
   });
 
-  it('should create the chart in a custom folder', async () => {
-    options = {
+  it('should throw an error if the project already has a helm target', async () => {
+    await expect(chartGenerator(tree, options)).rejects.toThrow(
+      `Project ${options.project} already has a helm target. Please remove it before running this command.`,
+    );
+  });
+
+  it('should create the chart in a folder relative to the project root', async () => {
+    const customOptions = {
       ...options,
       project: 'test-project-custom-folder',
       chartFolder: 'custom-folder',
     };
-    addProjectConfiguration(tree, options.project, {
-      root: `'${options.project}'`,
+    addProjectConfiguration(tree, customOptions.project, {
+      root: `apps/${customOptions.project}`,
     });
-    await chartGenerator(tree, options);
-    const projectConfig = readProjectConfiguration(tree, options.project);
-    expect(tree.exists(`${projectConfig.root}/custom-folder/Chart.yaml`)).toBe(
-      true,
-    );
+
+    await chartGenerator(tree, customOptions);
+
+    expect(
+      tree.exists('apps/test-project-custom-folder/custom-folder/Chart.yaml'),
+    ).toBe(true);
+    expect(
+      readProjectConfiguration(tree, customOptions.project).targets['helm']
+        .options.chartFolder,
+    ).toBe('apps/test-project-custom-folder/custom-folder');
   });
 
   it('should update the project configuration', async () => {
@@ -106,5 +121,72 @@ describe('chart generator', () => {
         repositories: [],
       },
     });
+  });
+});
+
+describe('chart generator formatting', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    formatFilesSpy.mockClear();
+    tree = createTreeWithEmptyWorkspace();
+    addProjectConfiguration(tree, 'my-app', { root: 'apps/my-app' });
+  });
+
+  // Prettier 3 cannot be imported inside jest's CommonJS VM, so these check
+  // that the generator formats, not the formatter output (covered by e2e).
+  it('should format the generated files', async () => {
+    await chartGenerator(tree, { name: 'my-app', project: 'my-app' });
+
+    expect(formatFilesSpy).toHaveBeenCalledWith(tree);
+  });
+
+  it('should not format with skipFormat', async () => {
+    await chartGenerator(tree, {
+      name: 'my-app',
+      project: 'my-app',
+      skipFormat: true,
+    });
+
+    expect(formatFilesSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('chart name', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it.each([
+    ['marcolongo.dev', 'marcolongo-dev'],
+    ['@org/my-app', 'org-my-app'],
+    ['My_App', 'my-app'],
+    ['my-app', 'my-app'],
+  ])('should turn "%s" into "%s"', (name, expected) => {
+    expect(toChartName(name)).toBe(expected);
+  });
+
+  it('should reject names without valid characters', () => {
+    expect(() => toChartName('...')).toThrow(
+      'Cannot derive a valid chart name from "...".',
+    );
+  });
+
+  it('should write the sanitized name to Chart.yaml', async () => {
+    addProjectConfiguration(tree, 'marcolongo.dev', {
+      root: 'apps/marcolongo.dev',
+    });
+
+    await chartGenerator(tree, {
+      name: 'marcolongo.dev',
+      project: 'marcolongo.dev',
+      skipFormat: true,
+    });
+
+    expect(tree.read('apps/marcolongo.dev/chart/Chart.yaml', 'utf8')).toContain(
+      'name: marcolongo-dev\n',
+    );
   });
 });
