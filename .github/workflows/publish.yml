@@ -24,32 +24,45 @@ jobs:
       contents: read
       id-token: write # needed for provenance data generation
     timeout-minutes: 10
-    env:
-      # setup-node v7 no longer defaults NODE_AUTH_TOKEN, and every npm/npx
-      # step reads the .npmrc it writes with registry-url.
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: 'npm'
+          package-manager-cache: false
           registry-url: https://registry.npmjs.org/
 
+      # No lifecycle scripts: none are needed to build, and the publish
+      # token is only exposed to the publish step below
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
-      - name: Parse project name from git tag if not provided
-        run: |
-          if [ -z "${{ inputs.projects }}" ]; then
-            export PROJECTS=$(echo ${{ github.ref }} | cut -d'@' -f1)
-          else
-            export PROJECTS=${{ inputs.projects }}
-          fi
+      - name: Resolve projects to publish
+        id: projects
         shell: bash
+        env:
+          INPUT_PROJECTS: ${{ inputs.projects }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -n "$INPUT_PROJECTS" ]; then
+            projects="$INPUT_PROJECTS"
+          elif [ "$REF_TYPE" = "tag" ]; then
+            # Release tags look like helm@1.1.0
+            projects="${REF_NAME%@*}"
+          else
+            echo "::error::Pass the projects input or run the workflow from a release tag"
+            exit 1
+          fi
+          if ! [[ "$projects" =~ ^[A-Za-z0-9@/._,*-]+$ ]]; then
+            echo "::error::Invalid projects value: $projects"
+            exit 1
+          fi
+          echo "list=$projects" >> "$GITHUB_OUTPUT"
 
       - name: Print Environment Info
         run: npx nx report
@@ -59,12 +72,14 @@ jobs:
         run: npx nx run-many --target build --parallel 3 --configuration production --verbose
 
       - name: Publish packages
-        run: |
-          if [ ${{env.DRY_RUN}} == true ]; then
-            npx nx release publish --dryRun --projects ${{env.PROJECTS}} --verbose
-          else
-            npx nx release publish --projects ${{env.PROJECTS}} --verbose
-          fi
+        shell: bash
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
           DRY_RUN: ${{ inputs.dryRun }}
-          PROJECTS: ${{ env.PROJECTS }}
+          PROJECTS: ${{ steps.projects.outputs.list }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            npx nx release publish --dryRun --projects "$PROJECTS" --verbose
+          else
+            npx nx release publish --projects "$PROJECTS" --verbose
+          fi
