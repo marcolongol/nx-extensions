@@ -19,7 +19,7 @@ const options: DependencyGeneratorSchema = {
   chartVersion: '18.1.7',
   repository: 'https://charts.example.com',
   repositoryName: 'example',
-  format: false,
+  skipFormat: true,
 };
 
 describe('dependency generator', () => {
@@ -27,7 +27,7 @@ describe('dependency generator', () => {
 
   const repositories = () =>
     readProjectConfiguration(tree, 'test-project').targets?.['helm']?.options
-      ?.dependencies?.repositories;
+      ?.repositories;
   const chartDependencies = () =>
     parse(tree.read(chartYaml, 'utf8') ?? '').dependencies;
 
@@ -94,9 +94,9 @@ describe('dependency generator', () => {
     expect(chartDependencies()).toHaveLength(2);
   });
 
-  it('should work when the helm target has no dependencies block', async () => {
+  it('should work when the helm target has no repositories option', async () => {
     const project = readProjectConfiguration(tree, 'test-project');
-    delete project.targets?.['helm']?.options?.dependencies;
+    delete project.targets?.['helm']?.options?.repositories;
     updateProjectConfiguration(tree, 'test-project', project);
 
     await dependencyGenerator(tree, options);

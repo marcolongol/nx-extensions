@@ -15,7 +15,9 @@ export interface DependencyGeneratorSchema {
   repository: string;
   /** Repository Name of the Dependency */
   repositoryName: string;
-  /** Format the generated files */
+  /** @deprecated Files are now always formatted. Use `skipFormat` to opt out. */
   format?: boolean;
+  /** Skip formatting the updated files. */
+  skipFormat?: boolean;
   [k: string]: unknown;
 }

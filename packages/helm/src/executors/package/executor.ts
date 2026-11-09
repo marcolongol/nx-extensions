@@ -44,13 +44,10 @@ async function packageChart(
     );
   }
 
-  // Nx 24 doesn't fill in nested defaults when the object itself is missing,
-  // so apply the schema defaults here
-  const dependencies = options.dependencies ?? {};
-  const repositories = (dependencies.repositories ?? []).map((repository) => {
+  const repositories = (options.repositories ?? []).map((repository) => {
     if (!repository.name || !repository.url) {
       throw new Error(
-        `Each dependencies.repositories entry needs a name and a url, got ${JSON.stringify(repository)}.`,
+        `Each repositories entry needs a name and a url, got ${JSON.stringify(repository)}.`,
       );
     }
     return {
@@ -76,17 +73,17 @@ async function packageChart(
   }
 
   const dependencyOptions = { plainHttp: options.plainHttp };
-  if (dependencies.update ?? true) {
+  if (options.updateDependencies ?? false) {
     await helm.dependencyUpdate(chartFolder, dependencyOptions);
   }
-  if (dependencies.build ?? false) {
+  if (options.buildDependencies ?? true) {
     await helm.dependencyBuild(chartFolder, dependencyOptions);
   }
 
   const chartPath = await helm.package({
     chartFolder,
     outputFolder,
-    version: options.version,
+    version: options.chartVersion,
     appVersion: options.appVersion,
   });
 

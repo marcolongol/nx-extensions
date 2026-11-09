@@ -49,6 +49,11 @@
             "input": "./packages/helm",
             "glob": "executors.json",
             "output": "."
+          },
+          {
+            "input": "./packages/helm",
+            "glob": "migrations.json",
+            "output": "."
           }
         ]
       }

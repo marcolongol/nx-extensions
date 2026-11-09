@@ -2,128 +2,76 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "PackageExecutorSchema",
   "title": "Package executor schema",
+  "description": "Packages a Helm chart and optionally pushes it to an OCI registry.",
   "type": "object",
   "properties": {
     "chartFolder": {
       "type": "string",
-      "description": "Folder where the chart is stored",
-      "$default": {
-        "$source": "argv",
-        "index": 0
-      },
-      "default": "chart",
-      "x-prompt": "Provide the chart folder"
+      "description": "Folder of the chart, relative to the workspace root."
     },
     "outputFolder": {
       "type": "string",
-      "description": "Folder to store the packaged chart",
-      "$default": {
-        "$source": "argv",
-        "index": 1
-      },
-      "default": "package",
-      "x-prompt": "Provide the output folder"
+      "description": "Folder for the packaged chart, relative to the workspace root or absolute."
+    },
+    "chartVersion": {
+      "type": "string",
+      "description": "Overrides the chart version when packaging (`helm package --version`)."
+    },
+    "appVersion": {
+      "type": "string",
+      "description": "Overrides the app version when packaging (`helm package --app-version`)."
     },
     "push": {
       "type": "boolean",
-      "description": "Push the chart to a remote registry",
-      "$default": {
-        "$source": "argv",
-        "index": 2
-      },
-      "x-prompt": "Provide the remote registry"
+      "description": "Push the packaged chart to `remote`.",
+      "default": false
     },
     "remote": {
       "type": "string",
-      "description": "Remote registry to publish the chart",
-      "$default": {
-        "$source": "argv",
-        "index": 3
-      },
-      "x-prompt": "Provide the remote registry"
+      "description": "OCI registry to push the chart to, e.g. `oci://ghcr.io/my-org/charts`. Required when `push` is set.",
+      "pattern": "^oci://"
     },
     "plainHttp": {
       "type": "boolean",
       "description": "Use plain HTTP instead of TLS for OCI registries: when pushing the chart (`helm push --plain-http`) and when downloading OCI dependencies (`helm dependency update/build --plain-http`). Helm v4 needs this for registries without TLS, including localhost.",
       "default": false
     },
-    "version": {
-      "type": "string",
-      "description": "Overwrite the version of the chart for packaging"
+    "updateDependencies": {
+      "type": "boolean",
+      "description": "Run `helm dependency update` before packaging. This re-resolves the dependencies and rewrites Chart.lock.",
+      "default": false
     },
-    "appVersion": {
-      "type": "string",
-      "description": "Overwrite the version of the application for packaging"
+    "buildDependencies": {
+      "type": "boolean",
+      "description": "Run `helm dependency build` before packaging. This downloads the dependencies pinned in Chart.lock, or resolves them when there is no Chart.lock yet.",
+      "default": true
     },
-    "dependencies": {
-      "type": "object",
-      "description": "Options related to dependencies",
-      "properties": {
-        "update": {
-          "type": "boolean",
-          "description": "Runs `helm dependency update` before packaging",
-          "$default": {
-            "$source": "argv",
-            "index": 4
+    "repositories": {
+      "type": "array",
+      "description": "Chart repositories to add with `helm repo add` before handling dependencies. oci:// and file:// repositories are used directly and not added.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the repository."
           },
-          "default": true,
-          "x-prompt": "Update dependencies before packaging?"
+          "url": {
+            "type": "string",
+            "description": "URL of the repository (https://, http://, oci:// or file://). Must not contain credentials; use username and passwordEnv."
+          },
+          "username": {
+            "type": "string",
+            "description": "Username for a repository that needs authentication."
+          },
+          "passwordEnv": {
+            "type": "string",
+            "description": "Name of the environment variable that holds the repository password. It is passed to helm through stdin, never on the command line."
+          }
         },
-        "build": {
-          "type": "boolean",
-          "description": "Runs `helm dependency build` before packaging",
-          "$default": {
-            "$source": "argv",
-            "index": 5
-          },
-          "default": false,
-          "x-prompt": "Build dependencies before packaging?"
-        },
-        "repositories": {
-          "type": "array",
-          "description": "List of repositories to add with `helm repo add` before packaging",
-          "$default": {
-            "$source": "argv",
-            "index": 6
-          },
-          "items": {
-            "type": "object",
-            "description": "Repository to add with `helm repo add` before packaging. oci:// and file:// repositories are used directly and not added.",
-            "$default": {
-              "$source": "argv",
-              "index": 7
-            },
-            "properties": {
-              "name": {
-                "type": "string",
-                "description": "Name of the repository",
-                "$default": {
-                  "$source": "argv",
-                  "index": 8
-                },
-                "x-prompt": "Provide the repository name"
-              },
-              "url": {
-                "type": "string",
-                "description": "URL of the repository (https://, http://, oci:// or file://). Must not contain credentials; use username and passwordEnv.",
-                "$default": {
-                  "$source": "argv",
-                  "index": 9
-                },
-                "x-prompt": "Provide the repository URL"
-              },
-              "username": {
-                "type": "string",
-                "description": "Username for a repository that needs authentication"
-              },
-              "passwordEnv": {
-                "type": "string",
-                "description": "Name of the environment variable that holds the repository password. It is passed to helm through stdin, never on the command line."
-              }
-            }
-          },
-          "x-prompt": "Add repositories before packaging?"
-        }
+        "required": ["name", "url"],
+        "additionalProperties": false
       }
     }
   },

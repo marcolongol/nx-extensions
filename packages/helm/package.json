@@ -31,5 +31,8 @@
     "helm",
     "kubernetes",
     "charts"
-  ]
+  ],
+  "nx-migrations": {
+    "migrations": "./migrations.json"
+  }
 }
