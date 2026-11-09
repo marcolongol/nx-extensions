@@ -50,7 +50,7 @@ describe('helm plugin', () => {
     expect(createNodesV2).toBe(createNodes);
   });
 
-  it('creates a chart project with package and push targets', async () => {
+  it('creates a chart project with package, push, lint and template targets', async () => {
     chart('apps/my-app/chart/Chart.yaml', 'my-app');
 
     const projects = await run(['apps/my-app/chart/Chart.yaml']);
@@ -84,6 +84,22 @@ describe('helm plugin', () => {
                 'Package the my-app Helm chart and push it to an OCI registry',
             },
           },
+          'helm-lint': {
+            executor: '@nx-extensions/helm:lint',
+            cache: true,
+            inputs: ['default', '^default'],
+            options: { chartFolder: '{projectRoot}' },
+            metadata: { description: 'Lint the my-app Helm chart' },
+          },
+          'helm-template': {
+            executor: '@nx-extensions/helm:template',
+            cache: true,
+            inputs: ['default', '^default'],
+            options: { chartFolder: '{projectRoot}' },
+            metadata: {
+              description: 'Check that the my-app Helm chart renders',
+            },
+          },
           'nx-release-publish': {
             executor: '@nx-extensions/helm:release-publish',
             dependsOn: ['^nx-release-publish'],
@@ -108,6 +124,8 @@ describe('helm plugin', () => {
       projectName: 'chart-{chartName}',
       packageTargetName: 'package',
       pushTargetName: 'push',
+      lintTargetName: 'lint',
+      templateTargetName: 'render',
       outputFolder: '{workspaceRoot}/out/{projectRoot}',
       remote: 'oci://ghcr.io/my-org/charts',
       plainHttp: true,
@@ -118,8 +136,15 @@ describe('helm plugin', () => {
     expect(Object.keys(project?.targets ?? {})).toEqual([
       'package',
       'push',
+      'lint',
+      'render',
       'nx-release-publish',
     ]);
+    // OCI dependencies from a registry without TLS
+    expect(project?.targets?.['lint'].options).toEqual({
+      chartFolder: '{projectRoot}',
+      plainHttp: true,
+    });
     expect(project?.targets?.['nx-release-publish'].options).toMatchObject({
       remote: 'oci://ghcr.io/my-org/charts',
       plainHttp: true,

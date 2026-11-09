@@ -106,7 +106,13 @@ function addRepository(
     tree,
     chartRoot,
     Object.fromEntries(
-      [targets.package, targets.push, targets.publish].map((target) => [
+      [
+        targets.package,
+        targets.push,
+        targets.publish,
+        targets.lint,
+        targets.template,
+      ].map((target) => [
         target,
         {
           repositories: withRepository(

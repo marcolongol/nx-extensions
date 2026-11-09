@@ -22,6 +22,8 @@ describe('init generator', () => {
           projectName: '{chartName}-chart',
           packageTargetName: 'helm-package',
           pushTargetName: 'helm-push',
+          lintTargetName: 'helm-lint',
+          templateTargetName: 'helm-template',
           outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
           appVersion: 'none',
         },

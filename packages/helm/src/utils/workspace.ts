@@ -126,6 +126,8 @@ export function chartTargetNames(options: HelmPluginOptions) {
   return {
     package: options.packageTargetName ?? 'helm-package',
     push: options.pushTargetName ?? 'helm-push',
+    lint: options.lintTargetName ?? 'helm-lint',
+    template: options.templateTargetName ?? 'helm-template',
     publish: 'nx-release-publish',
   };
 }

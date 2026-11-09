@@ -1,0 +1,4 @@
+{{ .Chart.Name }} {{ .Chart.Version }} is installed as {{ .Release.Name }}, with:
+{{- range .Chart.Dependencies }}
+  - {{ .Name }} {{ .Version }}
+{{- end }}

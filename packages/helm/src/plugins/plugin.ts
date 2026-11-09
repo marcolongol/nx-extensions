@@ -21,6 +21,10 @@ export interface HelmPluginOptions {
   packageTargetName?: string;
   /** Name of the target that packages and pushes the chart. */
   pushTargetName?: string;
+  /** Name of the target that lints the chart with `helm lint`. */
+  lintTargetName?: string;
+  /** Name of the target that checks the chart renders with `helm template`. */
+  templateTargetName?: string;
   /** Where packaged charts go. */
   outputFolder?: string;
   /** OCI registry the push target pushes to, e.g. `oci://ghcr.io/my-org/charts`. */
@@ -42,6 +46,8 @@ interface Chart {
 
 const PACKAGE_EXECUTOR = '@nx-extensions/helm:package';
 const RELEASE_PUBLISH_EXECUTOR = '@nx-extensions/helm:release-publish';
+const LINT_EXECUTOR = '@nx-extensions/helm:lint';
+const TEMPLATE_EXECUTOR = '@nx-extensions/helm:template';
 const CHART_FILE = 'Chart.yaml';
 
 /** The options the plugin uses when nx.json doesn't set them. */
@@ -49,6 +55,8 @@ export const defaultPluginOptions = {
   projectName: '{chartName}-chart',
   packageTargetName: 'helm-package',
   pushTargetName: 'helm-push',
+  lintTargetName: 'helm-lint',
+  templateTargetName: 'helm-template',
   outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
   appVersion: 'none',
 } satisfies HelmPluginOptions;
@@ -95,6 +103,10 @@ function chartProject(
     chartFolder: '{projectRoot}',
     outputFolder: options.outputFolder,
   };
+  const checkOptions = {
+    chartFolder: '{projectRoot}',
+    ...(options.plainHttp ? { plainHttp: true } : {}),
+  };
   return {
     projects: {
       [chartRoot]: {
@@ -121,6 +133,22 @@ function chartProject(
             },
             metadata: {
               description: `Package the ${chartName} Helm chart and push it to an OCI registry`,
+            },
+          },
+          [options.lintTargetName]: {
+            executor: LINT_EXECUTOR,
+            cache: true,
+            inputs: ['default', '^default'],
+            options: checkOptions,
+            metadata: { description: `Lint the ${chartName} Helm chart` },
+          },
+          [options.templateTargetName]: {
+            executor: TEMPLATE_EXECUTOR,
+            cache: true,
+            inputs: ['default', '^default'],
+            options: checkOptions,
+            metadata: {
+              description: `Check that the ${chartName} Helm chart renders`,
             },
           },
           // Run by `nx release publish`; charts this one depends on go first

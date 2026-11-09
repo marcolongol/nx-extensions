@@ -60,6 +60,8 @@ export default async function update(tree: Tree) {
         [targets.package]: overrides.build,
         [targets.push]: { ...overrides.build, ...overrides.push },
         [targets.publish]: { ...overrides.publish, ...overrides.push },
+        [targets.lint]: overrides.check,
+        [targets.template]: overrides.check,
       }).filter(([, values]) => Object.keys(values).length > 0),
     );
     if (Object.keys(targetOverrides).length > 0) {
@@ -180,7 +182,13 @@ function chartOverrides(
   if (Boolean(options.plainHttp) !== Boolean(plugin.plainHttp)) {
     push.plainHttp = Boolean(options.plainHttp);
   }
-  return { build, push, publish };
+  // The lint and template targets build dependencies from the same
+  // repositories. They keep building them even when packaging didn't: a
+  // chart with dependencies can't be linted or rendered without them.
+  const check: Record<string, unknown> = options.repositories?.length
+    ? { repositories: options.repositories }
+    : {};
+  return { build, push, publish, check };
 }
 
 function dependsOnTarget(target: TargetConfiguration, name: string): boolean {

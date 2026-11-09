@@ -84,6 +84,8 @@ describe('umbrella generator', () => {
       backend: { enabled: true },
     });
     expect(tree.exists('charts/platform/.helmignore')).toBe(true);
+    // helm lint warns about a chart without templates
+    expect(tree.exists('charts/platform/templates/NOTES.txt')).toBe(true);
     expect(tree.read('.gitignore', 'utf8')).toContain(
       '/charts/platform/charts/*.tgz\n',
     );

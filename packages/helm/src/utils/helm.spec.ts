@@ -108,6 +108,37 @@ describe('HelmClient', () => {
     ).resolves.toBe(false);
   });
 
+  it('lints with --strict and values files before the chart', async () => {
+    await helm.lint('/workspace/chart', {
+      strict: true,
+      values: ['a.yaml', 'b.yaml'],
+    });
+
+    expect(argsOf()).toEqual([
+      'lint',
+      '--strict',
+      '--values',
+      'a.yaml',
+      '--values',
+      'b.yaml',
+      '--',
+      '/workspace/chart',
+    ]);
+  });
+
+  it('renders a chart silently', async () => {
+    await helm.template('/workspace/chart', { values: ['prod.yaml'] });
+
+    expect(argsOf()).toEqual([
+      'template',
+      '--values',
+      'prod.yaml',
+      '--',
+      '/workspace/chart',
+    ]);
+    expect(run.mock.lastCall?.[2]).toMatchObject({ silent: true });
+  });
+
   it('adds a repository with --force-update', async () => {
     await helm.addRepository('example', 'https://charts.example.com');
 
