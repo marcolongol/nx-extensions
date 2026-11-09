@@ -214,11 +214,14 @@ describe('helm', () => {
   function createTestWorkspace(parentDirectory: string) {
     const workspaceName = 'test-workspace';
 
+    // The test workspace stands in for a user's npm workspace. Without
+    // --packageManager, create-nx-workspace uses whichever package manager
+    // ran the tests (pnpm in this repo), and the npm installs below fail.
     const createNxWorkspace = nxVersionOverride
       ? `npx --yes create-nx-workspace@${nxVersionOverride}`
       : `node ${createNxWorkspaceBin}`;
     run(
-      `${createNxWorkspace} ${workspaceName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
+      `${createNxWorkspace} ${workspaceName} --preset apps --packageManager=npm --nxCloud=skip --skipGit --no-interactive`,
       parentDirectory,
     );
     const directory = join(parentDirectory, workspaceName);
