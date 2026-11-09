@@ -134,7 +134,7 @@ async function pickCharts(): Promise<string[]> {
   const choices = Object.values(graph.nodes)
     .filter((node) => node.data.tags?.includes('helm-chart'))
     .map((node) => node.name)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
   if (choices.length === 0) {
     throw new Error(
       'There are no chart projects to bundle yet. Add charts with `nx g @nx-extensions/helm:chart` first.',
