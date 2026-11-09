@@ -29,6 +29,12 @@ export interface HelmPluginOptions {
   remote?: string;
   /** Use plain HTTP for OCI registries without TLS. */
   plainHttp?: boolean;
+  /**
+   * `project`: a chart inside another project's folder depends on that project,
+   * so releasing the project bumps the chart and sets its `appVersion` to the
+   * project's new version. `none` (default): no link.
+   */
+  appVersion?: 'none' | 'project';
 }
 
 interface Chart {
@@ -121,7 +127,9 @@ function hasGeneratedTarget(workspaceRoot: string, chartRoot: string): boolean {
 function chartProject(
   chartRoot: string,
   chartName: string,
-  options: Required<Omit<HelmPluginOptions, 'remote' | 'plainHttp'>> &
+  options: Required<
+    Omit<HelmPluginOptions, 'remote' | 'plainHttp' | 'appVersion'>
+  > &
     Pick<HelmPluginOptions, 'remote' | 'plainHttp'>,
 ): CreateNodesResult {
   const packageOptions: PackageExecutorSchema = {
@@ -205,7 +213,7 @@ export const createNodesV2: CreateNodes<HelmPluginOptions> = createNodes;
  * with the name of one.
  */
 export const createDependencies: CreateDependencies<HelmPluginOptions> = (
-  _options,
+  options,
   context,
 ) => {
   const charts = Object.entries(context.projects).flatMap(
@@ -243,6 +251,35 @@ export const createDependencies: CreateDependencies<HelmPluginOptions> = (
         });
       }
     }
+
+    if (options?.appVersion === 'project') {
+      const app = enclosingProject(context.projects, root);
+      if (app) {
+        dependencies.push({
+          source: project,
+          target: app,
+          type: DependencyType.implicit,
+        });
+      }
+    }
   }
   return dependencies;
 };
+
+/** The project whose folder most closely contains a chart's folder. */
+function enclosingProject(
+  projects: Record<string, { root: string }>,
+  chartRoot: string,
+): string | undefined {
+  let best: { project: string; depth: number } | undefined;
+  for (const [project, { root }] of Object.entries(projects)) {
+    const contains =
+      root !== chartRoot &&
+      (root === '.' || root === '' || chartRoot.startsWith(`${root}/`));
+    const depth = root === '.' || root === '' ? 0 : root.split('/').length;
+    if (contains && (!best || depth > best.depth)) {
+      best = { project, depth };
+    }
+  }
+  return best?.project;
+}

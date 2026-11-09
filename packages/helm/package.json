@@ -22,7 +22,8 @@
     "charts"
   ],
   "peerDependencies": {
-    "@nx/devkit": ">=22 <25"
+    "@nx/devkit": ">=22 <25",
+    "nx": ">=22 <25"
   },
   "dependencies": {
     "@nx-extensions/core": "workspace:^",
