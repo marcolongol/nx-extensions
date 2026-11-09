@@ -45,12 +45,7 @@ This will generate a new Helm chart for your project under the `{projectRoot}/ch
 ```json
 {
   "name": "my-app",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/my-app/src",
-  "projectType": "application",
-  "tags": [],
   "targets": {
-    [...]
     "helm": {
       "executor": "@nx-extensions/helm:package",
       "outputs": ["{options.outputFolder}"],
@@ -58,27 +53,26 @@ This will generate a new Helm chart for your project under the `{projectRoot}/ch
         "chartFolder": "apps/my-app/chart",
         "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
         "push": false,
-        "remote": "oci://localhost:5000/helm-charts",
-        "dependencies": {
-          "update": true,
-          "build": true,
-          "repositories": []
-        }
+        "updateDependencies": false,
+        "buildDependencies": true,
+        "repositories": []
       }
     }
   }
 }
 ```
 
+The generated chart matches `helm create <name>`: its template helpers are named after the chart (`my-chart.fullname`, `my-chart.labels`, ...), so it can be used as a subchart of another generated chart.
+
 ### Add a Dependency to your Helm chart
 
 You can also add a dependency to your Helm chart using the `@nx-extensions/helm:dependency` generator:
 
 ```bash
-nx g @nx-extensions/helm:dependency --project=my-app --chartName=nginx --chartVersion=18.7.1 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami
+nx g @nx-extensions/helm:dependency --project=my-app --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.example.com --repositoryName=example
 ```
 
-This will add the dependency to your Helm chart in the `Chart.yaml` file and add a entry to the `repositories` array in the `project.json` file.
+This adds the dependency to the chart's `Chart.yaml`, keeping its comments, and adds the repository to the `repositories` option of the helm target. Running it again for the same chart updates its version and repository.
 
 #### Chart.yaml
 
@@ -87,42 +81,22 @@ This will add the dependency to your Helm chart in the `Chart.yaml` file and add
 dependencies:
   - name: nginx
     version: 18.1.7
-    repository: 'https://charts.bitnami.com/bitnami'
+    repository: https://charts.example.com
 ```
 
 #### project.json
 
 ```diff
-{
-  "name": "my-app",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/my-app/src",
-  "projectType": "application",
-  "tags": [],
-  "targets": {
-    [...]
-    "helm": {
-      "executor": "@nx-extensions/helm:package",
-      "outputs": ["{options.outputFolder}"],
       "options": {
-        "chartFolder": "apps/my-app/chart",
-        "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
-        "push": false,
-        "remote": "oci://localhost:5000/helm-charts",
-        "dependencies": {
-          "update": true,
-          "build": true,
-++        "repositories": [
-++          {
-++            "name": "bitnami",
-++            "url": "https://charts.bitnami.com/bitnami"
-++          }
-++        ]
-        }
+        [...]
+--      "repositories": []
+++      "repositories": [
+++        {
+++          "name": "example",
+++          "url": "https://charts.example.com"
+++        }
+++      ]
       }
-    }
-  }
-}
 ```
 
 The package executor will automatically run `helm repo add` for each repository defined in the `repositories` array before packaging the chart.
@@ -148,48 +122,40 @@ Don't put credentials in the repository URL; the generator and executor reject U
 
 ### Build and package your Helm chart
 
-To build and package your Helm chart, you can use the nx run command to execute the `helm` target defined in your project:
+To build and package your Helm chart, run the `helm` target of your project:
 
 ```bash
 nx run my-app:helm
 ```
 
-This will build and package your Helm chart and output the packaged chart in the `dist/charts/{projectRoot}` directory under the workspace root.
+This packages the chart into `dist/charts/{projectRoot}` under the workspace root.
 
-Optionally, you can tell the executor to update and/or build the chart dependencies by setting the `dependencies.update` and `dependencies.build` option to `true` or `false`. This is going to tell the executor to respectively run `helm dependency update` and/or `helm dependency build` before packaging the chart.
+| Option               | Default | Description                                                                                                     |
+| -------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `chartFolder`        |         | Folder of the chart, relative to the workspace root.                                                            |
+| `outputFolder`       |         | Folder for the packaged chart, relative to the workspace root or absolute.                                      |
+| `chartVersion`       |         | Overrides the chart version (`helm package --version`).                                                         |
+| `appVersion`         |         | Overrides the app version (`helm package --app-version`).                                                       |
+| `buildDependencies`  | `true`  | Runs `helm dependency build`, which downloads the dependencies pinned in `Chart.lock` (or resolves them first). |
+| `updateDependencies` | `false` | Runs `helm dependency update`, which re-resolves the dependencies and rewrites `Chart.lock`.                    |
+| `repositories`       | `[]`    | Chart repositories to add before handling dependencies.                                                         |
+| `push`               | `false` | Pushes the packaged chart to `remote`.                                                                          |
+| `remote`             |         | OCI registry to push to, e.g. `oci://ghcr.io/my-org/charts`. Required with `push`.                              |
+| `plainHttp`          | `false` | Uses plain HTTP for OCI registries without TLS.                                                                 |
+
+Options can also be passed for a single run, e.g. `nx run my-app:helm --chartVersion=1.2.3 --updateDependencies`.
 
 ### Publish your Helm chart
 
-By default the executor options will default to `push: false` and `remote: oci://localhost:5000/helm-charts`. To publish your Helm chart to a custom registry, update the `project.json` file with the desired remote and set `push: true`. The chart will be pushed automatically to the defined registry after it gets packaged.
+To publish your chart, set `push` and the OCI registry to push to. The chart is pushed after it is packaged.
 
 ```diff
-{
-  "name": "my-app",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/my-app/src",
-  "projectType": "application",
-  "tags": [],
-  "targets": {
-    [...]
-    "helm": {
-      "executor": "@nx-extensions/helm:package",
-      "outputs": ["{options.outputFolder}"],
       "options": {
-        "chartFolder": "apps/my-app/chart",
-        "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
+        [...]
 --      "push": false,
 ++      "push": true,
---      "remote": "oci://localhost:5000/helm-charts"
-++      "remote": "oci://localhost:5000/my-charts"
-        "dependencies": {
-          "update": true,
-          "build": true
-          "repositories": []
-        }
+++      "remote": "oci://ghcr.io/my-org/charts",
       }
-    }
-  }
-}
 ```
 
 #### Registries without TLS
@@ -199,7 +165,7 @@ Helm v4 only uses plain HTTP when asked to, even for `localhost`. To use an OCI 
 ```diff
       "options": {
         "push": true,
-        "remote": "oci://localhost:5000/my-charts",
+        "remote": "oci://localhost:5000/charts",
 ++      "plainHttp": true,
         [...]
       }
@@ -210,3 +176,13 @@ You can also pass it for a single run:
 ```bash
 nx run my-app:helm --push --plainHttp
 ```
+
+## Upgrading from 1.x
+
+2.0.0 renames and flattens the executor options. Run `nx migrate @nx-extensions/helm@latest` and then `nx migrate --run-migrations` to update your `helm` targets and `targetDefaults`:
+
+- `version` is now `chartVersion`, since Nx uses `--version` itself.
+- `dependencies.update`, `dependencies.build` and `dependencies.repositories` are now `updateDependencies`, `buildDependencies` and `repositories`.
+- New targets default to `buildDependencies: true` and `updateDependencies: false`. The migration writes your 1.x behaviour (`updateDependencies: true`, `buildDependencies: false`) into existing targets, so nothing changes until you decide to.
+- New charts name their template helpers after the chart instead of `chart.`. Existing charts are left as they are.
+- Repositories now go to a workspace-local Helm repository config. Charts that relied on repositories added to your global Helm config must list them in `repositories`, or set `HELM_REPOSITORY_CONFIG`.
