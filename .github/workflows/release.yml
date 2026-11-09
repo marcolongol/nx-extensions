@@ -114,7 +114,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          pnpm exec nx release --skip-publish --yes --verbose
+          pnpm exec nx release --skip-publish --verbose
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # Build after versioning, so the packages carry the new versions
