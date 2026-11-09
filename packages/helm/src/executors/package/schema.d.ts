@@ -13,6 +13,12 @@ export interface PackageExecutorSchema {
   push?: boolean;
   /** Remote registry to publish the chart */
   remote?: string;
+  /**
+   * Use insecure HTTP connections when pushing the chart (`helm push
+   * --plain-http`). Helm v4 requires this for registries without TLS, including
+   * localhost.
+   */
+  plainHttp?: boolean;
   /** Overwrite the version of the chart for packaging */
   version?: string;
   /** Overwrite the version of the application for packaging */

@@ -73,7 +73,7 @@ describe('helm', () => {
   });
 
   it('should package and push a chart', () => {
-    execSync(`nx run @org/test-project:helm --push`, {
+    execSync(`nx run @org/test-project:helm --push --plainHttp`, {
       cwd: workspaceDirectory,
       stdio: 'inherit',
     });
@@ -97,7 +97,7 @@ describe('helm', () => {
   });
 
   it('should package and push a chart with dependencies', () => {
-    execSync(`nx run @org/test-project:helm --push`, {
+    execSync(`nx run @org/test-project:helm --push --plainHttp`, {
       cwd: workspaceDirectory,
       stdio: 'inherit',
     });

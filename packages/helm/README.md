@@ -168,3 +168,22 @@ By default the executor options will default to `push: false` and `remote: oci:/
   }
 }
 ```
+
+#### Registries without TLS
+
+Helm v4 only uses plain HTTP when asked to, even for `localhost`. To push to a registry without TLS, such as a local `registry:2` container, set `plainHttp: true`. The executor then runs `helm push --plain-http`.
+
+```diff
+      "options": {
+        "push": true,
+        "remote": "oci://localhost:5000/my-charts",
+++      "plainHttp": true,
+        [...]
+      }
+```
+
+You can also pass it for a single run:
+
+```bash
+nx run my-app:helm --push --plainHttp
+```
