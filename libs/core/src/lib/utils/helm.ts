@@ -42,6 +42,7 @@ export class HelmClient extends AbstractHelmClient {
       'push',
       options.chartPath,
       options.remote,
+      ...(options.plainHttp ? ['--plain-http'] : []),
     ]).then((output) => {
       if (output.stderr.length > 0 && output.exitCode !== 0) {
         throw new Error(`Failed to push chart: ${output.stderr}`);

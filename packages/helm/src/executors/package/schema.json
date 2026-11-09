@@ -42,6 +42,11 @@
       },
       "x-prompt": "Provide the remote registry"
     },
+    "plainHttp": {
+      "type": "boolean",
+      "description": "Use insecure HTTP connections when pushing the chart (`helm push --plain-http`). Helm v4 requires this for registries without TLS, including localhost.",
+      "default": false
+    },
     "version": {
       "type": "string",
       "description": "Overwrite the version of the chart for packaging"

@@ -34,6 +34,7 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
     await helm.push({
       chartPath: chartPath,
       remote: options.remote,
+      plainHttp: options.plainHttp,
     });
   }
 

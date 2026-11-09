@@ -19,6 +19,7 @@ export interface PackageOptions {
 export interface PushOptions {
   chartPath: string;
   remote: string;
+  plainHttp?: boolean;
 }
 
 /** Abstract class for Helm */
