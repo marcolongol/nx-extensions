@@ -116,6 +116,33 @@ export class HelmClient {
     );
   }
 
+  /** Runs `helm lint`, which prints its findings. */
+  async lint(
+    chartFolder: string,
+    options: { strict?: boolean; values?: string[] } = {},
+  ): Promise<void> {
+    await this.helm(
+      ['lint'],
+      [...(options.strict ? ['--strict'] : []), ...valuesFlags(options.values)],
+      [chartFolder],
+    );
+  }
+
+  /**
+   * Renders the chart with `helm template` to check that it renders. The
+   * manifests are not printed; a failure includes helm's error.
+   */
+  async template(
+    chartFolder: string,
+    options: { values?: string[] } = {},
+  ): Promise<void> {
+    await runCommand(
+      'helm',
+      ['template', ...valuesFlags(options.values), '--', chartFolder],
+      { cwd: this.options.cwd, env: this.options.env, silent: true },
+    );
+  }
+
   /**
    * Adds or updates a chart repository. `--force-update` keeps the entry in
    * line with the URL in the project configuration. The password goes through
@@ -150,6 +177,10 @@ export class HelmClient {
       input,
     });
   }
+}
+
+function valuesFlags(values: string[] = []): string[] {
+  return values.flatMap((file) => ['--values', file]);
 }
 
 export const createHelmClient = (options?: HelmClientOptions): HelmClient =>

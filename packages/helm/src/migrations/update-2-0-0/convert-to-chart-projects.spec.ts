@@ -118,6 +118,8 @@ describe('convert-to-chart-projects migration', () => {
         'nx-release-publish': {
           options: { ...build, remote: 'oci://localhost:5000/charts' },
         },
+        'helm-lint': { options: { repositories } },
+        'helm-template': { options: { repositories } },
       },
     });
   });

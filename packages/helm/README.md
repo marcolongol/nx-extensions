@@ -9,8 +9,8 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 - [x] Generate Helm charts for your applications
 - [x] Add dependencies to your Helm charts
 - [x] Bundle charts in umbrella charts
-- [ ] Lint Helm charts
-- [ ] Test Helm charts
+- [x] Lint Helm charts
+- [x] Check that Helm charts render
 - [x] Version Helm charts with `nx release`
 - [x] Package Helm charts
 - [x] Publish Helm charts
@@ -44,6 +44,8 @@ The plugin is registered with its default options written out, so `nx.json` show
         "projectName": "{chartName}-chart",
         "packageTargetName": "helm-package",
         "pushTargetName": "helm-push",
+        "lintTargetName": "helm-lint",
+        "templateTargetName": "helm-template",
         "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
         "appVersion": "none"
       }
@@ -63,10 +65,10 @@ nx g @nx-extensions/helm:init --remote=oci://ghcr.io/my-org/charts --appVersion=
 ### Add a Helm chart to your project
 
 ```bash
-nx g @nx-extensions/helm:chart my-app --project=my-app
+nx g @nx-extensions/helm:chart --project=my-app
 ```
 
-This generates a Helm chart in `{projectRoot}/chart`, which becomes the chart project `my-app-chart`. The chart matches what `helm create` generates in Helm v4, including an optional Gateway API `HTTPRoute`, with its template helpers named after the chart (`my-app.fullname`, `my-app.labels`, ...).
+This generates a Helm chart in `{projectRoot}/chart`, which becomes the chart project `my-app-chart`. The chart is named after the project (without an npm scope, so `@org/my-app` gives `my-app`); pass a name to pick another, e.g. `nx g @nx-extensions/helm:chart api --project=my-app`. The chart matches what `helm create` generates in Helm v4, including an optional Gateway API `HTTPRoute`, with its template helpers named after the chart (`my-app.fullname`, `my-app.labels`, ...).
 
 - `--chartFolder` is relative to the project root, so `--chartFolder=deploy/chart` creates `{projectRoot}/deploy/chart`.
 - The chart name is converted to a valid Kubernetes name: lowercase letters, digits and `-`. For example `my.app` creates a chart named `my-app`.
@@ -89,19 +91,23 @@ Every `Chart.yaml` becomes a project named `<chart name>-chart` and tagged `helm
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `helm-package`       | Packages the chart into `dist/charts/<chart folder>`. Cached: it only runs again when the chart, or a chart it depends on, changes.       |
 | `helm-push`          | Packages the chart and pushes it to `remote`.                                                                                             |
+| `helm-lint`          | Lints the chart with `helm lint`. Cached.                                                                                                 |
+| `helm-template`      | Renders the chart with `helm template`, to check that its templates render. Cached; the manifests are not printed.                        |
 | `nx-release-publish` | Used by `nx release publish`: pushes the chart to `remote` at the version in its Chart.yaml. See [Publishing charts](#publishing-charts). |
 
 Plugin options, in the plugin's entry in `nx.json`:
 
-| Option              | Default                                     | Description                                                                                                                                                                                                  |
-| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `projectName`       | `{chartName}-chart`                         | Name of the chart projects; `{chartName}` is the `name` in Chart.yaml.                                                                                                                                       |
-| `packageTargetName` | `helm-package`                              | Name of the package target.                                                                                                                                                                                  |
-| `pushTargetName`    | `helm-push`                                 | Name of the push target.                                                                                                                                                                                     |
-| `outputFolder`      | `{workspaceRoot}/dist/charts/{projectRoot}` | Where packaged charts go.                                                                                                                                                                                    |
-| `remote`            |                                             | OCI registry for the push target.                                                                                                                                                                            |
-| `plainHttp`         | `false`                                     | Use plain HTTP for OCI registries without TLS.                                                                                                                                                               |
-| `appVersion`        | `none`                                      | `project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion`. See [Versioning charts](#versioning-charts-with-nx-release). |
+| Option               | Default                                     | Description                                                                                                                                                                                                  |
+| -------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `projectName`        | `{chartName}-chart`                         | Name of the chart projects; `{chartName}` is the `name` in Chart.yaml.                                                                                                                                       |
+| `packageTargetName`  | `helm-package`                              | Name of the package target.                                                                                                                                                                                  |
+| `pushTargetName`     | `helm-push`                                 | Name of the push target.                                                                                                                                                                                     |
+| `lintTargetName`     | `helm-lint`                                 | Name of the lint target.                                                                                                                                                                                     |
+| `templateTargetName` | `helm-template`                             | Name of the template target.                                                                                                                                                                                 |
+| `outputFolder`       | `{workspaceRoot}/dist/charts/{projectRoot}` | Where packaged charts go.                                                                                                                                                                                    |
+| `remote`             |                                             | OCI registry for the push target.                                                                                                                                                                            |
+| `plainHttp`          | `false`                                     | Use plain HTTP for OCI registries without TLS.                                                                                                                                                               |
+| `appVersion`         | `none`                                      | `project`: a chart inside another project's folder depends on that project, so releasing the project bumps the chart and sets its `appVersion`. See [Versioning charts](#versioning-charts-with-nx-release). |
 
 ### Target options
 
@@ -130,6 +136,22 @@ Pass them for a single run, e.g. `nx run my-app-chart:helm-push --chartVersion=1
   }
 }
 ```
+
+### Lint and render checks
+
+```bash
+nx run-many -t helm-lint helm-template
+```
+
+Both build the chart's dependencies first (`helm dependency build`), so an umbrella chart is checked with its subcharts. Their options:
+
+| Option              | Default | Description                                                                              |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `values`            | `[]`    | Values files to use, relative to the chart folder, e.g. `["values-prod.yaml"]`.          |
+| `strict`            | `false` | `helm-lint` only: fail on warnings too (`helm lint --strict`).                           |
+| `buildDependencies` | `true`  | Build the dependencies first. Turn it off for charts whose dependencies are vendored.    |
+| `repositories`      | `[]`    | Chart repositories to add before building dependencies, as for the package executor.     |
+| `plainHttp`         | `false` | Plain HTTP for OCI dependencies from registries without TLS; set from the plugin option. |
 
 ### Registries without TLS
 

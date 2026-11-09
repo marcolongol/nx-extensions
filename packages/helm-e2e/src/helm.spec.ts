@@ -197,6 +197,35 @@ describe('helm', () => {
     run('npx nx run platform-chart:helm-package', workspaceDirectory);
   });
 
+  step('should lint and render the charts', () => {
+    run(
+      'npx nx run-many -t helm-lint helm-template --projects=tag:helm-chart',
+      workspaceDirectory,
+    );
+  });
+
+  step('should catch a chart that does not render', () => {
+    const service = join(
+      projectDirectory,
+      'deploy',
+      'backend',
+      'templates',
+      'service.yaml',
+    );
+    const original = readFileSync(service, 'utf8');
+    writeFileSync(
+      service,
+      `${original}\n{{ .Values.broken | required "broken is required" }}\n`,
+    );
+    try {
+      expect(() =>
+        run('npx nx run backend-chart:helm-template', workspaceDirectory),
+      ).toThrow();
+    } finally {
+      writeFileSync(service, original);
+    }
+  });
+
   step('should release and publish the charts', () => {
     // The plugin is already registered, so this only adds the release group
     run(

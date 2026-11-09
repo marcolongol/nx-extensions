@@ -4,7 +4,7 @@ import { PromiseExecutor, ExecutorContext, logger } from '@nx/devkit';
 import { resolvePathInside } from '@nx-extensions/core';
 
 import { PackageExecutorSchema } from './schema.d';
-import { createHelmClient } from '../../utils/helm';
+import { createHelmClient, HelmClient } from '../../utils/helm';
 import { checkRepositoryUrl } from '../../utils/repository';
 
 const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
@@ -48,6 +48,37 @@ export async function packageChart(
     );
   }
 
+  const helm = createHelmClient({ env: helmEnv(context.root) });
+  await prepareDependencies(helm, chartFolder, options);
+
+  const chartPath = await helm.package({
+    chartFolder,
+    outputFolder,
+    version: options.chartVersion,
+    appVersion: options.appVersion,
+  });
+
+  if (options.push) {
+    await helm.push({
+      chartPath,
+      remote,
+      plainHttp: options.plainHttp,
+    });
+  }
+}
+
+/**
+ * Adds the chart's repositories and updates or builds its dependencies, as the
+ * options say. Shared by the executors that need a chart's dependencies.
+ */
+export async function prepareDependencies(
+  helm: HelmClient,
+  chartFolder: string,
+  options: Pick<
+    PackageExecutorSchema,
+    'repositories' | 'plainHttp' | 'updateDependencies' | 'buildDependencies'
+  >,
+) {
   const repositories = (options.repositories ?? []).map((repository) => {
     if (!repository.name || !repository.url) {
       throw new Error(
@@ -62,8 +93,6 @@ export async function packageChart(
       password: readPassword(repository.name, repository.passwordEnv),
     };
   });
-
-  const helm = createHelmClient({ env: helmEnv(context.root) });
 
   for (const repository of repositories) {
     // OCI and local file dependencies are resolved without a repository entry
@@ -82,21 +111,6 @@ export async function packageChart(
   }
   if (options.buildDependencies ?? true) {
     await helm.dependencyBuild(chartFolder, dependencyOptions);
-  }
-
-  const chartPath = await helm.package({
-    chartFolder,
-    outputFolder,
-    version: options.chartVersion,
-    appVersion: options.appVersion,
-  });
-
-  if (options.push) {
-    await helm.push({
-      chartPath,
-      remote,
-      plainHttp: options.plainHttp,
-    });
   }
 }
 

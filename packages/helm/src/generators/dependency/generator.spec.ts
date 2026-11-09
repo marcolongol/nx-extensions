@@ -105,6 +105,8 @@ describe('dependency generator', () => {
         'helm-package': options,
         'helm-push': options,
         'nx-release-publish': options,
+        'helm-lint': options,
+        'helm-template': options,
       },
     });
   });

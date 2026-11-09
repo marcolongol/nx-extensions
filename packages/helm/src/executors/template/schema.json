@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "TemplateExecutorSchema",
+  "title": "Template executor schema",
+  "description": "Renders a Helm chart with `helm template` to check that its templates render.",
+  "type": "object",
+  "properties": {
+    "chartFolder": {
+      "type": "string",
+      "description": "Folder of the chart, relative to the workspace root."
+    },
+    "values": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Values files to use, relative to the chart folder, e.g. `values-prod.yaml`.",
+      "default": []
+    },
+    "buildDependencies": {
+      "type": "boolean",
+      "description": "Run `helm dependency build` first, so umbrella charts have their subcharts.",
+      "default": true
+    },
+    "repositories": {
+      "type": "array",
+      "description": "Chart repositories to add with `helm repo add` before handling dependencies. oci:// and file:// repositories are used directly and not added.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the repository."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL of the repository (https://, http://, oci:// or file://). Must not contain credentials; use username and passwordEnv."
+          },
+          "username": {
+            "type": "string",
+            "description": "Username for a repository that needs authentication."
+          },
+          "passwordEnv": {
+            "type": "string",
+            "description": "Name of the environment variable that holds the repository password. It is passed to helm through stdin, never on the command line."
+          }
+        },
+        "required": ["name", "url"],
+        "additionalProperties": false
+      }
+    },
+    "plainHttp": {
+      "type": "boolean",
+      "description": "Use plain HTTP for OCI dependencies from registries without TLS.",
+      "default": false
+    }
+  },
+  "required": ["chartFolder"]
+}

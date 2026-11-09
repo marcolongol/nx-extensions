@@ -9,6 +9,16 @@
       "implementation": "./src/executors/release-publish/executor",
       "schema": "./src/executors/release-publish/schema.json",
       "description": "Publish a chart to an OCI registry as part of nx release publish"
+    },
+    "lint": {
+      "implementation": "./src/executors/lint/executor",
+      "schema": "./src/executors/lint/schema.json",
+      "description": "Lint a Helm chart with helm lint"
+    },
+    "template": {
+      "implementation": "./src/executors/template/executor",
+      "schema": "./src/executors/template/schema.json",
+      "description": "Check that a Helm chart renders with helm template"
     }
   }
 }
