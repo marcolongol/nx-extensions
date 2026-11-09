@@ -6,6 +6,24 @@
   "implicitDependencies": ["helm"],
   "targets": {
     "e2e": {
+      "cache": false,
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/tools/scripts/start-local-registry.ts",
+        "{workspaceRoot}/tools/scripts/stop-local-registry.ts",
+        "{workspaceRoot}/.github/workflows/ci.yml",
+        "{workspaceRoot}/.nvmrc",
+        {
+          "externalDependencies": [
+            "jest",
+            "@nx/jest",
+            "ts-jest",
+            "testcontainers"
+          ]
+        }
+      ],
       "options": {
         "passWithNoTests": true,
         "runInBand": true

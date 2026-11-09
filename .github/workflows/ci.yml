@@ -8,8 +8,15 @@ on:
       - main
   pull_request:
 
+# Cancel superseded runs of the same PR; runs on main always finish
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
-  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+  # PRs only get a read-only token (if NX_CLOUD_READ_TOKEN exists), so they
+  # can't write to the shared remote cache
+  NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name == 'pull_request' && secrets.NX_CLOUD_READ_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
   NX_SKIP_NX_CACHE: ${{ vars.NX_SKIP_NX_CACHE || 'false' }}
 
 permissions:
@@ -17,36 +24,30 @@ permissions:
   contents: read
 
 jobs:
+  # The job id is the required status check on main; keep it in sync with
+  # the branch ruleset when renaming
   main:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      # Connect your workspace on nx.app and uncomment this to enable task distribution.
-      # The "--stop-agents-after" is optional, but allows idle agents to shut down once the "e2e-ci" targets have been requested
-      # - run: npx nx-cloud start-ci-run --distribute-on="5 linux-medium-js" --stop-agents-after="e2e-ci"
-
-      # Cache node_modules
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: 'npm'
 
       - uses: azure/setup-helm@v5.0.1
         with:
           version: '4.3.1'
 
-      - run: npm ci
+      # No lifecycle scripts are needed to lint, test, build or run e2e
+      - run: npm ci --ignore-scripts
 
-      - uses: nrwl/nx-set-shas@v4
-
-      - run: git branch --track main origin/main
-        if: ${{ github.event_name == 'pull_request' }}
+      - uses: nrwl/nx-set-shas@v5
 
       - run: npx nx format:check
-      - run: npx nx affected -t test --verbose --parallel 3
-      - run: npx nx affected -t lint --verbose --parallel 3
-      - run: npx nx affected -t e2e --verbose --parallel 3
-      - run: npx nx affected -t build --verbose --parallel 3
+      - run: npx nx affected -t lint test build e2e --parallel 3
