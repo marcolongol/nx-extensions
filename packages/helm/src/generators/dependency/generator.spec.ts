@@ -2,80 +2,138 @@ import {
   Tree,
   addProjectConfiguration,
   readProjectConfiguration,
+  updateProjectConfiguration,
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import yaml from 'js-yaml';
+import { parse } from 'yaml';
 
 import { dependencyGenerator } from './generator';
 import { DependencyGeneratorSchema } from './schema';
 import { chartGenerator } from '../chart/generator';
-import { ChartGeneratorSchema } from '../chart/schema';
+
+const chartYaml = 'apps/test-project/chart/Chart.yaml';
+
+const options: DependencyGeneratorSchema = {
+  project: 'test-project',
+  chartName: 'nginx',
+  chartVersion: '18.1.7',
+  repository: 'https://charts.example.com',
+  repositoryName: 'example',
+  format: false,
+};
 
 describe('dependency generator', () => {
   let tree: Tree;
-  let chartOptions: ChartGeneratorSchema;
-  let dependencyOptions: DependencyGeneratorSchema;
 
-  beforeAll(async () => {
+  const repositories = () =>
+    readProjectConfiguration(tree, 'test-project').targets?.['helm']?.options
+      ?.dependencies?.repositories;
+  const chartDependencies = () =>
+    parse(tree.read(chartYaml, 'utf8') ?? '').dependencies;
+
+  beforeEach(async () => {
     tree = createTreeWithEmptyWorkspace();
-
-    chartOptions = {
+    addProjectConfiguration(tree, 'test-project', {
+      root: 'apps/test-project',
+    });
+    await chartGenerator(tree, {
       project: 'test-project',
       name: 'test-chart',
-      chartFolder: 'chart',
-      format: false,
-    };
-
-    dependencyOptions = {
-      project: 'test-project',
-      chartName: 'nginx',
-      chartVersion: '18.7.1',
-      repository: 'https://charts.bitnami.com/bitnami',
-      repositoryName: 'bitnami',
-      format: false,
-    };
-
-    addProjectConfiguration(tree, chartOptions.project, {
-      root: `'${chartOptions.project}'`,
+      skipFormat: true,
     });
-
-    await chartGenerator(tree, chartOptions);
-
-    await dependencyGenerator(tree, dependencyOptions);
   });
 
-  it('should run successfully', async () => {
-    const config = readProjectConfiguration(tree, 'test-project');
-    expect(config).toBeDefined();
-  });
+  it('should add the repository to the project configuration', async () => {
+    await dependencyGenerator(tree, options);
 
-  it('should add the dependency to project configuration', async () => {
-    const config = readProjectConfiguration(tree, 'test-project');
-    expect(config.targets?.helm?.options?.dependencies?.repositories).toEqual([
-      {
-        name: 'bitnami',
-        url: 'https://charts.bitnami.com/bitnami',
-      },
+    expect(repositories()).toEqual([
+      { name: 'example', url: 'https://charts.example.com' },
     ]);
   });
 
   it('should add the dependency to Chart.yaml', async () => {
-    const config = readProjectConfiguration(tree, 'test-project');
-    const chartFolder = config.targets?.helm?.options?.chartFolder;
-    const chartContents = yaml.load(
-      tree.read(`${chartFolder}/Chart.yaml`, 'utf8').toString(),
-    ) as {
-      dependencies: { name: string; version: string; repository: string }[];
-    };
+    await dependencyGenerator(tree, options);
 
-    console.log(chartContents);
-
-    expect(chartContents.dependencies).toEqual([
+    expect(chartDependencies()).toEqual([
       {
         name: 'nginx',
-        version: '18.7.1',
-        repository: 'https://charts.bitnami.com/bitnami',
+        version: '18.1.7',
+        repository: 'https://charts.example.com',
       },
     ]);
+  });
+
+  it('should update an existing dependency and save Chart.yaml', async () => {
+    await dependencyGenerator(tree, options);
+    await dependencyGenerator(tree, {
+      ...options,
+      chartVersion: '19.0.0',
+      repository: 'https://mirror.example.com',
+    });
+
+    expect(chartDependencies()).toEqual([
+      {
+        name: 'nginx',
+        version: '19.0.0',
+        repository: 'https://mirror.example.com',
+      },
+    ]);
+  });
+
+  it('should not duplicate a repository with the same name', async () => {
+    await dependencyGenerator(tree, options);
+    await dependencyGenerator(tree, {
+      ...options,
+      chartName: 'redis',
+      repository: 'https://mirror.example.com',
+    });
+
+    expect(repositories()).toEqual([
+      { name: 'example', url: 'https://mirror.example.com' },
+    ]);
+    expect(chartDependencies()).toHaveLength(2);
+  });
+
+  it('should work when the helm target has no dependencies block', async () => {
+    const project = readProjectConfiguration(tree, 'test-project');
+    delete project.targets?.['helm']?.options?.dependencies;
+    updateProjectConfiguration(tree, 'test-project', project);
+
+    await dependencyGenerator(tree, options);
+
+    expect(repositories()).toEqual([
+      { name: 'example', url: 'https://charts.example.com' },
+    ]);
+  });
+
+  it('should keep comments in Chart.yaml', async () => {
+    tree.write(
+      chartYaml,
+      `${tree.read(chartYaml, 'utf8')}# keep this comment\n`,
+    );
+
+    await dependencyGenerator(tree, options);
+
+    expect(tree.read(chartYaml, 'utf8')).toContain('# keep this comment');
+  });
+
+  it('should reject a chartFolder outside the project root', async () => {
+    const project = readProjectConfiguration(tree, 'test-project');
+    if (project.targets?.['helm']) {
+      project.targets['helm'].options.chartFolder = 'apps/other/chart';
+    }
+    updateProjectConfiguration(tree, 'test-project', project);
+
+    await expect(dependencyGenerator(tree, options)).rejects.toThrow(
+      'must be inside the project root',
+    );
+  });
+
+  it('should require a helm target', async () => {
+    addProjectConfiguration(tree, 'no-helm', { root: 'apps/no-helm' });
+
+    await expect(
+      dependencyGenerator(tree, { ...options, project: 'no-helm' }),
+    ).rejects.toThrow('does not have a helm target');
   });
 });
