@@ -8,6 +8,7 @@ import {
   readProjectConfiguration,
   Tree,
   updateProjectConfiguration,
+  visitNotIgnoredFiles,
 } from '@nx/devkit';
 import { addToPrettierIgnore, isPathInside } from '@nx-extensions/core';
 
@@ -85,12 +86,31 @@ export async function chartGenerator(
     name: chartName,
   });
 
-  // Helm template syntax is not valid YAML, so prettier cannot format it.
-  addToPrettierIgnore(tree, [`/${chartRoot}/templates`]);
+  // Helm template syntax is not valid YAML, so formatters can't parse it
+  const templates = joinPathFragments(chartRoot, 'templates');
+  addToPrettierIgnore(tree, [`/${templates}`]);
 
   if (!options.skipFormat) {
+    // Older devkits' formatFiles doesn't read the .prettierignore in the
+    // tree, so keep the templates out of the tree while formatting
+    const held = holdBack(tree, templates);
     await formatFiles(tree);
+    for (const [file, content] of held) {
+      tree.write(file, content);
+    }
   }
+}
+
+function holdBack(tree: Tree, folder: string): Map<string, Buffer> {
+  const held = new Map<string, Buffer>();
+  visitNotIgnoredFiles(tree, folder, (file) => {
+    const content = tree.read(file);
+    if (content) {
+      held.set(file, content);
+      tree.delete(file);
+    }
+  });
+  return held;
 }
 
 export default chartGenerator;

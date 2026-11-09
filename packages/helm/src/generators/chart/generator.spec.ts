@@ -170,6 +170,22 @@ describe('chart generator formatting', () => {
     expect(formatFilesSpy).toHaveBeenCalledWith(tree);
   });
 
+  it('should keep the templates away from the formatter', async () => {
+    const deployment = 'apps/my-app/chart/templates/deployment.yaml';
+    formatFilesSpy.mockImplementationOnce(async (formatted) => {
+      // Older devkits format every changed file, ignoring .prettierignore
+      expect(formatted.exists(deployment)).toBe(false);
+      expect(formatted.exists('apps/my-app/chart/values.yaml')).toBe(true);
+    });
+
+    await chartGenerator(tree, { name: 'my-app', project: 'my-app' });
+
+    expect(formatFilesSpy).toHaveBeenCalled();
+    expect(tree.read(deployment, 'utf8')).toContain(
+      '{{- include "my-app.labels" . | nindent 4 }}',
+    );
+  });
+
   it('should not format with skipFormat', async () => {
     await chartGenerator(tree, {
       name: 'my-app',
