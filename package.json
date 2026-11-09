@@ -6,7 +6,6 @@
   "scripts": {},
   "private": true,
   "dependencies": {
-    "@actions/exec": "^1.1.1",
     "@nx/devkit": "24.0.5",
     "create-nx-workspace": "24.0.5",
     "tslib": "^2.3.0",
