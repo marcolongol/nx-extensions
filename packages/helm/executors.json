@@ -4,6 +4,11 @@
       "implementation": "./src/executors/package/executor",
       "schema": "./src/executors/package/schema.json",
       "description": "Package a Helm chart and optionally push it to an OCI registry"
+    },
+    "release-publish": {
+      "implementation": "./src/executors/release-publish/executor",
+      "schema": "./src/executors/release-publish/schema.json",
+      "description": "Publish a chart to an OCI registry as part of nx release publish"
     }
   }
 }

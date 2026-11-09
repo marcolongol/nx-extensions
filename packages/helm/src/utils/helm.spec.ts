@@ -1,4 +1,4 @@
-import { runCommand } from '@nx-extensions/core';
+import { CommandError, runCommand } from '@nx-extensions/core';
 
 import { HelmClient } from './helm';
 
@@ -79,6 +79,33 @@ describe('HelmClient', () => {
       'chart.tgz',
       'oci://localhost:5000/charts',
     ]);
+  });
+
+  it('checks whether a chart version exists in a registry', async () => {
+    await expect(
+      helm.chartExists('oci://localhost:5000/charts/my-chart', '1.2.0', {
+        plainHttp: true,
+      }),
+    ).resolves.toBe(true);
+
+    expect(argsOf()).toEqual([
+      'show',
+      'chart',
+      '--version',
+      '1.2.0',
+      '--plain-http',
+      '--',
+      'oci://localhost:5000/charts/my-chart',
+    ]);
+    expect(run.mock.lastCall?.[2]).toMatchObject({ silent: true });
+  });
+
+  it('reports a chart version that helm cannot find as missing', async () => {
+    run.mockRejectedValue(new CommandError('helm show chart', 1, 'not found'));
+
+    await expect(
+      helm.chartExists('oci://ghcr.io/my-org/charts/my-chart', '9.9.9'),
+    ).resolves.toBe(false);
   });
 
   it('adds a repository with --force-update', async () => {

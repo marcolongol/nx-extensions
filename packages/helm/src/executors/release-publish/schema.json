@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ReleasePublishExecutorSchema",
+  "title": "Release publish executor schema",
+  "description": "Publishes a chart to an OCI registry as part of `nx release publish`, at the version in its Chart.yaml. Versions already in the registry are skipped.",
+  "type": "object",
+  "properties": {
+    "chartFolder": {
+      "type": "string",
+      "description": "Folder of the chart, relative to the workspace root."
+    },
+    "outputFolder": {
+      "type": "string",
+      "description": "Folder for the packaged chart, relative to the workspace root or absolute."
+    },
+    "remote": {
+      "type": "string",
+      "description": "OCI registry to push the chart to, e.g. `oci://ghcr.io/my-org/charts`.",
+      "pattern": "^oci://"
+    },
+    "plainHttp": {
+      "type": "boolean",
+      "description": "Use plain HTTP instead of TLS for OCI registries.",
+      "default": false
+    },
+    "publish": {
+      "type": "boolean",
+      "description": "Set to false for a chart that should not be pushed on its own, e.g. a subchart that only ships inside an umbrella chart.",
+      "default": true
+    },
+    "repositories": {
+      "type": "array",
+      "description": "Chart repositories to add with `helm repo add` before building dependencies; see the package executor.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "url": { "type": "string" },
+          "username": { "type": "string" },
+          "passwordEnv": { "type": "string" }
+        },
+        "required": ["name", "url"],
+        "additionalProperties": false
+      }
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "Package the chart without pushing it. Set by `nx release publish --dry-run`.",
+      "default": false
+    }
+  },
+  "required": ["chartFolder", "outputFolder"]
+}
