@@ -18,7 +18,7 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 
 ## Prerequisites
 
-Before you can use the Nx Plugin for Helm, you need to have Helm installed on your machine. You can install Helm by following the instructions [here](https://helm.sh/docs/intro/install/). The plugin is tested with Helm v4 and Nx 24, and accepts Nx 22 to 24 as a peer dependency.
+Before you can use the Nx Plugin for Helm, you need to have Helm installed on your machine. You can install Helm by following the instructions [here](https://helm.sh/docs/intro/install/). The plugin supports Nx 22 to 24 and is tested with Helm v4: on every change with the Nx version this repository uses, and weekly with the newest Nx and with Nx 22.
 
 ### Install the Nx Plugin for Helm
 
@@ -26,6 +26,12 @@ To get started with the Nx Plugin for Helm, run the following command:
 
 ```bash
 npm install --save-dev @nx-extensions/helm
+```
+
+On Nx 22, install the matching `@nx/devkit` with it. Otherwise npm picks the newest `@nx/devkit` the plugin accepts, which needs Nx 23 or later:
+
+```bash
+npm install --save-dev @nx-extensions/helm @nx/devkit@22
 ```
 
 ### Add a Helm chart to your project
