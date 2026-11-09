@@ -168,6 +168,22 @@ describe('chart generator chart project', () => {
     ).rejects.toThrow('nx add @nx-extensions/helm');
   });
 
+  it.each([
+    ['my-api', 'my-api'],
+    ['@org/my-web', 'my-web'],
+  ])(
+    'should name the chart after the project %s without a name',
+    async (project, chartName) => {
+      addProjectConfiguration(tree, project, { root: `apps/${chartName}` });
+
+      await chartGenerator(tree, { project, skipFormat: true });
+
+      expect(tree.read(`apps/${chartName}/chart/Chart.yaml`, 'utf8')).toContain(
+        `name: ${chartName}\n`,
+      );
+    },
+  );
+
   it('should not overwrite an existing chart', async () => {
     await expect(
       chartGenerator(tree, {

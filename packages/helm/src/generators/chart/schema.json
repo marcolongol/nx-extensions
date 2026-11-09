@@ -6,12 +6,11 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Name of the chart. Converted to a valid Kubernetes name (lowercase letters, digits and `-`), so `my.app` becomes `my-app`.",
+      "description": "Name of the chart. Converted to a valid Kubernetes name (lowercase letters, digits and `-`), so `my.app` becomes `my-app`. Defaults to the project's name, without an npm scope.",
       "$default": {
         "$source": "argv",
         "index": 0
-      },
-      "x-prompt": "Provide a name for your chart"
+      }
     },
     "project": {
       "type": "string",
@@ -44,5 +43,5 @@
       "x-priority": "internal"
     }
   },
-  "required": ["name", "project"]
+  "required": ["project"]
 }

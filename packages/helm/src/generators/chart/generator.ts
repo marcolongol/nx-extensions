@@ -46,10 +46,12 @@ export async function chartGenerator(
 ) {
   const project = readProjectConfiguration(tree, options.project);
 
-  const chartName = toChartName(options.name);
-  if (chartName !== options.name) {
+  // Without a name, the chart is named after the project, minus an npm scope
+  const name = options.name ?? options.project.split('/').pop() ?? '';
+  const chartName = toChartName(name);
+  if (chartName !== name) {
     logger.warn(
-      `"${options.name}" is not a valid chart name, using "${chartName}" instead.`,
+      `"${name}" is not a valid chart name, using "${chartName}" instead.`,
     );
   }
 
