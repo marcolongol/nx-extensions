@@ -43,21 +43,25 @@ export async function resolveUserExistingPrettierConfig(): Promise<
   }
 }
 
+/**
+ * Appends entries to the workspace `.prettierignore`, creating it if needed.
+ * Entries already present are skipped and existing content is left untouched.
+ *
+ * @param {Tree} tree
+ * @param {string[]} ignore
+ */
 export function addToPrettierIgnore(tree: Tree, ignore: string[]) {
-  const ignorePath = `${tree.root}/.prettierignore`;
+  const ignorePath = '.prettierignore';
+  const content = tree.exists(ignorePath)
+    ? tree.read(ignorePath, 'utf8') || ''
+    : '';
 
-  if (!tree.exists(ignorePath)) {
-    tree.write(ignorePath, ignore.join('\n'));
+  const existing = new Set(content.split(/\r?\n/).map((line) => line.trim()));
+  const missing = [...new Set(ignore)].filter((entry) => !existing.has(entry));
+  if (missing.length === 0) {
     return;
   }
 
-  try {
-    const content = tree.read(ignorePath, 'utf8') || '';
-    const lines = content.split('\n');
-    // Remove duplicates
-    const newContent = [...new Set([...lines, ...ignore])].join('\n');
-    tree.write(ignorePath, newContent);
-  } catch (error: unknown) {
-    throw new Error(`Failed to update .prettierignore file: ${String(error)}`);
-  }
+  const prefix = content.length === 0 || content.endsWith('\n') ? '' : '\n';
+  tree.write(ignorePath, `${content}${prefix}${missing.join('\n')}\n`);
 }
