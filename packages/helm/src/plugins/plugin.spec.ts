@@ -84,6 +84,18 @@ describe('helm plugin', () => {
                 'Package the my-app Helm chart and push it to an OCI registry',
             },
           },
+          'nx-release-publish': {
+            executor: '@nx-extensions/helm:release-publish',
+            dependsOn: ['^nx-release-publish'],
+            options: {
+              chartFolder: '{projectRoot}',
+              outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
+            },
+            metadata: {
+              description:
+                'Publish the my-app Helm chart as part of nx release publish',
+            },
+          },
         },
       },
     });
@@ -103,7 +115,15 @@ describe('helm plugin', () => {
 
     const project = projects['charts/platform/Chart.yaml']?.['charts/platform'];
     expect(project?.name).toBe('chart-platform');
-    expect(Object.keys(project?.targets ?? {})).toEqual(['package', 'push']);
+    expect(Object.keys(project?.targets ?? {})).toEqual([
+      'package',
+      'push',
+      'nx-release-publish',
+    ]);
+    expect(project?.targets?.['nx-release-publish'].options).toMatchObject({
+      remote: 'oci://ghcr.io/my-org/charts',
+      plainHttp: true,
+    });
     expect(project?.targets?.['push'].options).toEqual({
       chartFolder: '{projectRoot}',
       outputFolder: '{workspaceRoot}/out/{projectRoot}',

@@ -1,4 +1,4 @@
-import { runCommand } from '@nx-extensions/core';
+import { CommandError, runCommand } from '@nx-extensions/core';
 
 export interface PackageOptions {
   chartFolder: string;
@@ -59,6 +59,39 @@ export class HelmClient {
       options.chartPath,
       options.remote,
     ]);
+  }
+
+  /**
+   * Whether a chart version exists in an OCI registry, e.g.
+   * `oci://ghcr.io/my-org/charts/my-chart` at `1.2.0`. Any failure, such as the
+   * version not being there, counts as not existing.
+   */
+  async chartExists(
+    reference: string,
+    version: string,
+    options: { plainHttp?: boolean } = {},
+  ): Promise<boolean> {
+    try {
+      await runCommand(
+        'helm',
+        [
+          'show',
+          'chart',
+          '--version',
+          version,
+          ...(options.plainHttp ? ['--plain-http'] : []),
+          '--',
+          reference,
+        ],
+        { cwd: this.options.cwd, env: this.options.env, silent: true },
+      );
+      return true;
+    } catch (error) {
+      if (error instanceof CommandError) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   async dependencyUpdate(

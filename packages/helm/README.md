@@ -206,10 +206,11 @@ Every `Chart.yaml` then becomes a project named `<chart name>-chart` and tagged 
 
 Each chart project gets two targets:
 
-| Target         | Description                                                                                                                         |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `helm-package` | Packages the chart into `dist/charts/<chart folder>`. Cached: it only runs again when the chart, or a chart it depends on, changes. |
-| `helm-push`    | Packages the chart and pushes it to `remote`.                                                                                       |
+| Target               | Description                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `helm-package`       | Packages the chart into `dist/charts/<chart folder>`. Cached: it only runs again when the chart, or a chart it depends on, changes.       |
+| `helm-push`          | Packages the chart and pushes it to `remote`.                                                                                             |
+| `nx-release-publish` | Used by `nx release publish`: pushes the chart to `remote` at the version in its Chart.yaml. See [Publishing charts](#publishing-charts). |
 
 Both use the [package executor](#build-and-package-your-helm-chart), so its options can be set per run, e.g. `nx run my-app-chart:helm-push --chartVersion=1.2.3`.
 
@@ -274,6 +275,32 @@ Chart projects can be versioned with [Nx Release](https://nx.dev/features/manage
 - **Registries without TLS.** If an umbrella's OCI dependencies come from a registry without TLS, set `"versionActionsOptions": { "plainHttp": true }` under `release.version`, so the `Chart.lock` refresh uses `--plain-http`.
 
 Charts and npm packages can be released together: give the packages their own release group with the default version actions.
+
+### Publishing charts
+
+`nx release publish` (or the publish step of `nx release`) runs each chart's `nx-release-publish` target, which packages the chart at the version in its Chart.yaml and pushes it to the plugin's `remote`. Charts go after the charts they depend on, so subcharts are pushed before their umbrella.
+
+- **Already published versions are skipped**, checked with `helm show chart`, so a publish can be re-run safely.
+- **`--dry-run`** packages the charts without pushing them.
+- **Subcharts that only ship inside an umbrella** can skip being pushed on their own. Add a `project.json` next to the chart's Chart.yaml:
+
+  ```json
+  {
+    "name": "frontend-chart",
+    "targets": {
+      "nx-release-publish": { "options": { "publish": false } }
+    }
+  }
+  ```
+
+  With `file://` dependencies, the umbrella contains its subcharts either way.
+
+- **Registry credentials** come from Helm's own registry config. Log in before publishing, e.g. in CI:
+
+  ```bash
+  echo "$REGISTRY_TOKEN" | helm registry login ghcr.io --username my-user --password-stdin
+  npx nx release publish
+  ```
 
 ## Upgrading from 1.x
 

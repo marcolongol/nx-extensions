@@ -43,6 +43,7 @@ interface Chart {
 }
 
 const PACKAGE_EXECUTOR = '@nx-extensions/helm:package';
+const RELEASE_PUBLISH_EXECUTOR = '@nx-extensions/helm:release-publish';
 const CHART_FILE = 'Chart.yaml';
 
 const defaults = {
@@ -162,6 +163,19 @@ function chartProject(
             },
             metadata: {
               description: `Package the ${chartName} Helm chart and push it to an OCI registry`,
+            },
+          },
+          // Run by `nx release publish`; charts this one depends on go first
+          'nx-release-publish': {
+            executor: RELEASE_PUBLISH_EXECUTOR,
+            dependsOn: ['^nx-release-publish'],
+            options: {
+              ...packageOptions,
+              ...(options.remote ? { remote: options.remote } : {}),
+              ...(options.plainHttp ? { plainHttp: true } : {}),
+            },
+            metadata: {
+              description: `Publish the ${chartName} Helm chart as part of nx release publish`,
             },
           },
         },

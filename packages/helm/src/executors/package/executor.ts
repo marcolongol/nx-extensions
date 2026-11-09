@@ -20,7 +20,11 @@ const runExecutor: PromiseExecutor<PackageExecutorSchema> = async (
   }
 };
 
-async function packageChart(
+/**
+ * Packages a chart, handling repositories and dependencies first, and pushes it
+ * when `push` is set. Throws on invalid options or when helm fails.
+ */
+export async function packageChart(
   options: PackageExecutorSchema,
   context: ExecutorContext,
 ) {
@@ -117,7 +121,7 @@ function readPassword(
  * config, in a cache folder that is never committed. A HELM_REPOSITORY_CONFIG
  * or HELM_REPOSITORY_CACHE the user set wins.
  */
-function helmEnv(workspaceRoot: string): NodeJS.ProcessEnv {
+export function helmEnv(workspaceRoot: string): NodeJS.ProcessEnv {
   const cache = path.join(
     workspaceRoot,
     'node_modules',
