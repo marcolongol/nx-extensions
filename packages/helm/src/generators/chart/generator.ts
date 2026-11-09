@@ -3,13 +3,36 @@ import path from 'node:path';
 import {
   formatFiles,
   generateFiles,
+  joinPathFragments,
   logger,
   readProjectConfiguration,
   Tree,
   updateProjectConfiguration,
 } from '@nx/devkit';
+import { addToPrettierIgnore } from '@nx-extensions/core';
 
 import { ChartGeneratorSchema } from './schema.d';
+
+/**
+ * Turns a name into a valid chart name. Helm uses the chart name in resource
+ * names, and Services need a DNS-1035 label: lowercase alphanumerics and `-`.
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+export function toChartName(name: string): string {
+  const chartName = name
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  if (!chartName) {
+    throw new Error(`Cannot derive a valid chart name from "${name}".`);
+  }
+
+  return chartName;
+}
 
 export async function chartGenerator(
   tree: Tree,
@@ -23,6 +46,18 @@ export async function chartGenerator(
     );
   }
 
+  const chartName = toChartName(options.name);
+  if (chartName !== options.name) {
+    logger.warn(
+      `"${options.name}" is not a valid chart name, using "${chartName}" instead.`,
+    );
+  }
+
+  const chartRoot = joinPathFragments(
+    project.root,
+    options.chartFolder ?? 'chart',
+  );
+
   updateProjectConfiguration(tree, options.project, {
     ...project,
     targets: {
@@ -31,7 +66,7 @@ export async function chartGenerator(
         executor: '@nx-extensions/helm:package',
         outputs: ['{options.outputFolder}'],
         options: {
-          chartFolder: `${project.root}/${options.chartFolder}`,
+          chartFolder: chartRoot,
           outputFolder: '{workspaceRoot}/dist/charts/{projectRoot}',
           push: false,
           remote: 'oci://localhost:5000/helm-charts',
@@ -45,21 +80,17 @@ export async function chartGenerator(
     },
   });
 
-  generateFiles(
-    tree,
-    path.join(__dirname, 'files', 'chart'),
-    path.join(project.root, options.chartFolder),
-    options,
-  );
+  generateFiles(tree, path.join(__dirname, 'files', 'chart'), chartRoot, {
+    ...options,
+    name: chartName,
+  });
 
-  if (options.format) {
+  // Helm template syntax is not valid YAML, so prettier cannot format it.
+  addToPrettierIgnore(tree, [`/${chartRoot}/templates`]);
+
+  if (!options.skipFormat) {
     await formatFiles(tree);
   }
-
-  // TODO: can we do this programmatically?
-  logger.warn(
-    `Add ${project.root}/${options.chartFolder} to .prettierignore to avoid Helm chart syntax errors.`,
-  );
 }
 
 export default chartGenerator;

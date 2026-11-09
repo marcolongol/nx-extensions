@@ -18,7 +18,7 @@ The Nx Plugin for Helm provides a set of executors, generators, and utilities to
 
 ## Prerequisites
 
-Before you can use the Nx Plugin for Helm, you need to have Helm installed on your machine. You can install Helm by following the instructions [here](https://helm.sh/docs/intro/install/).
+Before you can use the Nx Plugin for Helm, you need to have Helm installed on your machine. You can install Helm by following the instructions [here](https://helm.sh/docs/intro/install/). The plugin is tested with Helm v4 and Nx 24, and accepts Nx 22 to 24 as a peer dependency.
 
 ### Install the Nx Plugin for Helm
 
@@ -36,7 +36,11 @@ To get started with the Nx Plugin for Helm, run the following command:
 nx g @nx-extensions/helm:chart --name=my-chart --project=my-app
 ```
 
-This will generate a new Helm chart for your project under `{projectRoot}/chart` directory and configure the helm target in your project `project.json` file.
+This will generate a new Helm chart for your project under the `{projectRoot}/chart` directory and configure the helm target in your project `project.json` file. The chart matches what `helm create` generates in Helm v4, including an optional Gateway API `HTTPRoute`.
+
+- `--chartFolder` is relative to the project root, so `--chartFolder=deploy/chart` creates `{projectRoot}/deploy/chart`.
+- The chart name is converted to a valid Kubernetes name: lowercase letters, digits and `-`. For example `--name=my.app` creates a chart named `my-app`.
+- The chart's `templates` folder is added to `.prettierignore`, because Prettier cannot parse Helm templates. Other generated files are formatted; pass `--skipFormat` to skip that.
 
 ```json
 {
@@ -51,7 +55,7 @@ This will generate a new Helm chart for your project under `{projectRoot}/chart`
       "executor": "@nx-extensions/helm:package",
       "outputs": ["{options.outputFolder}"],
       "options": {
-        "chartFolder": "apps/test-project/chart",
+        "chartFolder": "apps/my-app/chart",
         "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
         "push": false,
         "remote": "oci://localhost:5000/helm-charts",
@@ -101,7 +105,7 @@ dependencies:
       "executor": "@nx-extensions/helm:package",
       "outputs": ["{options.outputFolder}"],
       "options": {
-        "chartFolder": "apps/test-project/chart",
+        "chartFolder": "apps/my-app/chart",
         "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
         "push": false,
         "remote": "oci://localhost:5000/helm-charts",
@@ -152,7 +156,7 @@ By default the executor options will default to `push: false` and `remote: oci:/
       "executor": "@nx-extensions/helm:package",
       "outputs": ["{options.outputFolder}"],
       "options": {
-        "chartFolder": "apps/test-project/chart",
+        "chartFolder": "apps/my-app/chart",
         "outputFolder": "{workspaceRoot}/dist/charts/{projectRoot}",
 --      "push": false,
 ++      "push": true,

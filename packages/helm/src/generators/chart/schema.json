@@ -6,7 +6,7 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Name of the chart",
+      "description": "Name of the chart. Converted to a valid Kubernetes name (lowercase letters, digits and `-`), so `my.app` becomes `my-app`.",
       "$default": {
         "$source": "argv",
         "index": 0
@@ -24,23 +24,24 @@
     },
     "chartFolder": {
       "type": "string",
-      "description": "Folder to store the chart",
+      "description": "Folder for the chart, relative to the project root. The default `chart` creates `{projectRoot}/chart`.",
       "$default": {
         "$source": "argv",
         "index": 2
       },
       "default": "chart",
-      "x-prompt": "Provide the chart folder"
+      "x-prompt": "Provide the chart folder (relative to the project root)"
     },
     "format": {
       "type": "boolean",
-      "description": "Format the generated chart",
-      "$default": {
-        "$source": "argv",
-        "index": 3
-      },
+      "description": "Deprecated, has no effect. Files are now always formatted; use `skipFormat` to opt out.",
+      "x-deprecated": "Files are now always formatted and the chart templates are added to .prettierignore. Use `skipFormat` to opt out."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files. The chart `templates` folder is added to `.prettierignore` either way.",
       "default": false,
-      "x-prompt": "Format the generated chart? Warning: prettier will display errors due to the template syntax: https://github.com/prettier/prettier/issues/6517"
+      "x-priority": "internal"
     }
   },
   "required": ["name", "project"]
