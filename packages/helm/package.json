@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "Nx plugin to generate, package and push Helm charts",
+  "description": "Nx plugin to generate, package, version and publish Helm charts",
   "license": "MIT",
   "repository": {
     "type": "git",

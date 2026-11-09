@@ -172,6 +172,122 @@ describe('helm', () => {
     run(`npx nx run ${chartProject}:helm-package`, projectDirectory);
   });
 
+  step('should add an umbrella chart', () => {
+    for (const name of ['frontend', 'backend']) {
+      run(
+        `npx nx generate @nx-extensions/helm:chart --name=${name} --project=${projectName} --chartFolder=deploy/${name} --no-interactive`,
+        workspaceDirectory,
+      );
+    }
+    run(
+      'npx nx generate @nx-extensions/helm:umbrella platform --charts=frontend-chart,backend-chart --no-interactive',
+      workspaceDirectory,
+    );
+
+    expect(
+      readFileSync(
+        join(workspaceDirectory, 'charts', 'platform', 'Chart.yaml'),
+        'utf8',
+      ),
+    ).toContain('repository: file://../../apps/test-project/deploy/frontend');
+
+    run('npx nx run platform-chart:helm-package', workspaceDirectory);
+  });
+
+  step('should release and publish the charts', () => {
+    run(
+      'npx nx generate @nx-extensions/helm:init --release',
+      workspaceDirectory,
+    );
+    updateJson(join(workspaceDirectory, 'nx.json'), (nxJson) => {
+      nxJson.plugins = nxJson.plugins.map((plugin: unknown) =>
+        plugin === '@nx-extensions/helm'
+          ? { plugin, options: { remote, plainHttp: true } }
+          : plugin,
+      );
+      nxJson.release.git = { push: false };
+      nxJson.release.version = { conventionalCommits: true };
+      return nxJson;
+    });
+    run('git init --quiet --initial-branch=main', workspaceDirectory);
+    run('git add --all', workspaceDirectory);
+    run('git commit --quiet --message="chore: charts"', workspaceDirectory);
+
+    run(
+      'npx nx release --specifier=patch --first-release --yes',
+      workspaceDirectory,
+    );
+
+    expect(readChart('charts/platform')).toContain('version: 0.1.1');
+    expect(git('tag --list')).toContain('platform-chart@0.1.1');
+    for (const chart of ['platform', 'frontend', 'backend', 'my-chart']) {
+      expect(showChart(chart, '0.1.1')).toContain(`name: ${chart}`);
+    }
+  });
+
+  step('should republish the umbrella when a subchart changes', () => {
+    const values = join(projectDirectory, 'deploy', 'frontend', 'values.yaml');
+    writeFileSync(
+      values,
+      readFileSync(values, 'utf8').replace(
+        'replicaCount: 1',
+        'replicaCount: 2',
+      ),
+    );
+    run(
+      'git commit --quiet --all --message="fix: run two frontends"',
+      workspaceDirectory,
+    );
+
+    run('npx nx release --yes', workspaceDirectory);
+
+    // Only the frontend changed: it and the umbrella that bundles it get a
+    // patch bump, and the umbrella ships the new frontend
+    const platform = readChart('charts/platform');
+    expect(platform).toContain('version: 0.1.2');
+    expect(platform).toMatch(/name: frontend\s+version: 0\.1\.2/);
+    expect(pulledSubchart('platform', '0.1.2', 'frontend')).toContain(
+      'version: 0.1.2',
+    );
+    expect(git('tag --list')).not.toContain('backend-chart@0.1.2');
+  });
+
+  function readChart(chartRoot: string): string {
+    return readFileSync(
+      join(workspaceDirectory, chartRoot, 'Chart.yaml'),
+      'utf8',
+    );
+  }
+
+  function git(args: string): string {
+    return execSync(`git ${args}`, {
+      cwd: workspaceDirectory,
+      env: testEnv(),
+      encoding: 'utf8',
+    });
+  }
+
+  /** The Chart.yaml of a chart in the e2e registry. */
+  function showChart(name: string, version: string): string {
+    return execSync(
+      `helm show chart ${remote}/${name} --version ${version} --plain-http`,
+      { env: testEnv(), encoding: 'utf8' },
+    );
+  }
+
+  /** The Chart.yaml of a subchart inside a chart pulled from the registry. */
+  function pulledSubchart(name: string, version: string, subchart: string) {
+    const directory = mkdtempSync(join(tmpDirectory, 'pull-'));
+    run(
+      `helm pull ${remote}/${name} --version ${version} --plain-http --untar`,
+      directory,
+    );
+    return readFileSync(
+      join(directory, name, 'charts', subchart, 'Chart.yaml'),
+      'utf8',
+    );
+  }
+
   /**
    * Runs a command with a minimal environment: no CI secrets, Nx Cloud off, and
    * Helm config, cache and data kept inside the test directory so the user's
@@ -201,7 +317,19 @@ describe('helm', () => {
       HELM_CONFIG_HOME: join(helmHome, 'config'),
       HELM_CACHE_HOME: join(helmHome, 'cache'),
       HELM_DATA_HOME: join(helmHome, 'data'),
+      // nx release commits and tags; keep the user's git config (and commit
+      // signing) out of it
+      GIT_CONFIG_GLOBAL: gitConfig(),
+      GIT_CONFIG_NOSYSTEM: '1',
     };
+  }
+
+  function gitConfig(): string {
+    const file = join(tmpDirectory, 'gitconfig');
+    if (!existsSync(file)) {
+      writeFileSync(file, '[user]\n\tname = e2e\n\temail = e2e@example.com\n');
+    }
+    return file;
   }
 
   /**
@@ -331,4 +459,11 @@ async function startChartRepository(
     });
   });
   return { server, port };
+}
+
+function updateJson(file: string, update: (json: any) => unknown) {
+  writeFileSync(
+    file,
+    `${JSON.stringify(update(JSON.parse(readFileSync(file, 'utf8'))), null, 2)}\n`,
+  );
 }

@@ -21,7 +21,7 @@ pnpm exec nx run-many -t lint test build
 pnpm exec nx format:check
 ```
 
-The end-to-end tests create a fresh Nx workspace, install the plugin from a local registry and package and push a chart. They need [Helm](https://helm.sh/docs/intro/install/) and Docker:
+The end-to-end tests create a fresh Nx workspace, install the plugin from a local registry, package and push charts, and release and publish them with `nx release`, umbrella chart included. They need [Helm](https://helm.sh/docs/intro/install/) and Docker:
 
 ```bash
 pnpm exec nx run helm-e2e:e2e
