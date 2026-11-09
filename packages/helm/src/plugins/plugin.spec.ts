@@ -10,12 +10,7 @@ import {
   ProjectConfiguration,
 } from '@nx/devkit';
 
-import {
-  createDependencies,
-  createNodes,
-  createNodesV2,
-  HelmPluginOptions,
-} from './plugin';
+import { createDependencies, createNodes, HelmPluginOptions } from './plugin';
 
 describe('helm plugin', () => {
   let workspaceRoot: string;
@@ -45,9 +40,8 @@ describe('helm plugin', () => {
 
   afterEach(() => rmSync(workspaceRoot, { recursive: true, force: true }));
 
-  it('matches every Chart.yaml, under both export names', () => {
+  it('matches every Chart.yaml', () => {
     expect(createNodes[0]).toBe('**/Chart.yaml');
-    expect(createNodesV2).toBe(createNodes);
   });
 
   it('creates a chart project with package, push, lint and template targets', async () => {
