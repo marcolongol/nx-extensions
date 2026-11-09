@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import {
+  createProjectGraphAsync,
   formatFiles,
   generateFiles,
   joinPathFragments,
@@ -9,6 +10,7 @@ import {
   Tree,
 } from '@nx/devkit';
 import { isPathInside } from '@nx-extensions/core';
+import { prompt } from 'enquirer';
 import { stringify } from 'yaml';
 
 import { UmbrellaGeneratorSchema } from './schema.d';
@@ -40,14 +42,9 @@ export async function umbrellaGenerator(
     );
   }
 
-  // A comma-separated string when called programmatically with one
-  const list: string[] =
-    typeof options.charts === 'string'
-      ? (options.charts as string).split(',')
-      : options.charts;
-  const charts = [...new Set(list.map((chart) => chart.trim()))].filter(
-    Boolean,
-  );
+  const charts = options.charts
+    ? parseCharts(options.charts)
+    : await pickCharts();
   if (charts.length === 0) {
     throw new Error('Pass at least one chart project in charts.');
   }
@@ -115,6 +112,43 @@ export async function umbrellaGenerator(
   if (!options.skipFormat) {
     await formatFiles(tree);
   }
+}
+
+/** A list, or a comma-separated string when called programmatically. */
+function parseCharts(charts: string[] | string): string[] {
+  const list = typeof charts === 'string' ? charts.split(',') : charts;
+  return [...new Set(list.map((chart) => chart.trim()))].filter(Boolean);
+}
+
+/** Lets the user pick the charts from the workspace's chart projects. */
+async function pickCharts(): Promise<string[]> {
+  // nx generate sets NX_INTERACTIVE; --no-interactive and CI set it to false
+  if (process.env.NX_INTERACTIVE !== 'true') {
+    throw new Error(
+      'Pass the chart projects to bundle, e.g. --charts=frontend-chart,backend-chart.',
+    );
+  }
+  const graph = await createProjectGraphAsync();
+  const choices = Object.values(graph.nodes)
+    .filter((node) => node.data.tags?.includes('helm-chart'))
+    .map((node) => node.name)
+    .sort();
+  if (choices.length === 0) {
+    throw new Error(
+      'There are no chart projects to bundle yet. Add charts with `nx g @nx-extensions/helm:chart` first.',
+    );
+  }
+  const { charts } = await prompt<{ charts: string[] }>({
+    type: 'multiselect',
+    name: 'charts',
+    message: 'Which chart projects should the umbrella chart bundle?',
+    choices,
+    // A multiselect passes the picked choices, not the string its types say
+    validate: (picked: string) =>
+      (picked as unknown as string[]).length > 0 ||
+      'Pick at least one chart (space to select).',
+  });
+  return charts;
 }
 
 function valuesYaml(subcharts: { name: string }[]): string {

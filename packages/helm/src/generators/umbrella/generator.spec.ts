@@ -5,6 +5,7 @@ import {
   Tree,
 } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { prompt } from 'enquirer';
 import { parse } from 'yaml';
 
 import { umbrellaGenerator } from './generator';
@@ -16,6 +17,7 @@ jest.mock('@nx/devkit', () => ({
   ...jest.requireActual('@nx/devkit'),
   createProjectGraphAsync: jest.fn(),
 }));
+jest.mock('enquirer', () => ({ prompt: jest.fn() }));
 
 const chartRoots = ['apps/frontend/chart', 'apps/backend/chart'];
 
@@ -166,5 +168,39 @@ describe('umbrella generator', () => {
         skipFormat: true,
       }),
     ).rejects.toThrow('already has a Chart.yaml');
+  });
+
+  describe('without charts', () => {
+    const interactive = process.env.NX_INTERACTIVE;
+    afterEach(() => {
+      process.env.NX_INTERACTIVE = interactive;
+      jest.mocked(prompt).mockReset();
+    });
+
+    it('should let the user pick the chart projects', async () => {
+      process.env.NX_INTERACTIVE = 'true';
+      jest.mocked(prompt).mockResolvedValue({ charts: ['frontend-chart'] });
+
+      await umbrellaGenerator(tree, { name: 'platform', skipFormat: true });
+
+      expect(prompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'multiselect',
+          choices: ['backend-chart', 'frontend-chart'],
+        }),
+      );
+      expect(chart().dependencies).toEqual([
+        expect.objectContaining({ name: 'frontend' }),
+      ]);
+    });
+
+    it('should ask for charts when not interactive', async () => {
+      process.env.NX_INTERACTIVE = 'false';
+
+      await expect(
+        umbrellaGenerator(tree, { name: 'platform', skipFormat: true }),
+      ).rejects.toThrow('--charts=');
+      expect(prompt).not.toHaveBeenCalled();
+    });
   });
 });

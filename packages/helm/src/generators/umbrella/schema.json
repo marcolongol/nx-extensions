@@ -16,9 +16,10 @@
     },
     "charts": {
       "type": "array",
-      "items": { "type": "string" },
-      "description": "Chart projects to bundle, e.g. `--charts=frontend-chart,backend-chart`.",
-      "x-prompt": "Which chart projects should the umbrella chart bundle (comma-separated)?"
+      "items": {
+        "type": "string"
+      },
+      "description": "Chart projects to bundle, e.g. `--charts=frontend-chart,backend-chart`. Left out, the generator lets you pick them from the workspace's chart projects."
     },
     "directory": {
       "type": "string",
@@ -36,5 +37,5 @@
       "x-priority": "internal"
     }
   },
-  "required": ["name", "charts"]
+  "required": ["name"]
 }

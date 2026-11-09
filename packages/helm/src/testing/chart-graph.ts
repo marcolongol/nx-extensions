@@ -18,7 +18,7 @@ export function chartProjectGraph(
     nodes[`${name}-chart`] = {
       name: `${name}-chart`,
       type: 'lib',
-      data: { root },
+      data: { root, tags: ['helm-chart'] },
     };
   }
   return { nodes, dependencies: {} };
