@@ -4,7 +4,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { workspaceRoot } from '@nx/devkit';
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
@@ -49,12 +49,18 @@ export default async () => {
       },
     });
 
-    // Build the published projects with the e2e version, from the workspace
-    // root like CI does, so the published layout matches a real release
-    execFileSync('npx', ['nx', 'run-many', '-t', 'build', '-p', 'helm,core'], {
-      cwd: workspaceRoot,
-      stdio: 'inherit',
-    });
+    // Build the published projects with the e2e version from the workspace
+    // root, like CI does, so the published layout matches a real release.
+    // nx's script runs with this Node instead of an npx found on PATH.
+    const nx = join(
+      dirname(require.resolve('nx/package.json')),
+      require('nx/package.json').bin.nx,
+    );
+    execFileSync(
+      process.execPath,
+      [nx, 'run-many', '-t', 'build', '-p', 'helm,core'],
+      { cwd: workspaceRoot, stdio: 'inherit' },
+    );
 
     await releasePublish({
       tag: 'e2e',
