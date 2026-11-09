@@ -6,9 +6,10 @@
 export interface ChartGeneratorSchema {
   /**
    * Name of the chart. Converted to a valid Kubernetes name (lowercase letters,
-   * digits and `-`), so `my.app` becomes `my-app`.
+   * digits and `-`), so `my.app` becomes `my-app`. Defaults to the project's
+   * name.
    */
-  name: string;
+  name?: string;
   /** Name of the project to add the chart to */
   project: string;
   /**
