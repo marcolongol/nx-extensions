@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+---
+# Runs the e2e suite against the newest Nx and the oldest one the plugin
+# supports. CI pins the test workspace to the repo's Nx version so PRs stay
+# deterministic; this catches drift without blocking anyone.
+name: E2E canary
+
+on:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: e2e (Nx ${{ matrix.nx }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep in sync with the @nx/devkit peer range of packages/helm
+        nx: ['latest', '22']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - uses: azure/setup-helm@v5.0.1
+        with:
+          version: '4.3.1'
+
+      - run: npm ci --ignore-scripts
+
+      - run: npx nx run helm-e2e:e2e --skip-nx-cache
+        env:
+          E2E_NX_VERSION: ${{ matrix.nx }}
+          NX_NO_CLOUD: 'true'
