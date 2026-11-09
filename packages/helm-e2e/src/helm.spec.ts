@@ -1,61 +1,121 @@
-import { execSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { ChildProcess, execSync, spawn } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const { join, dirname } = path;
-import { workspaceRoot } from '@nx/devkit';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 
+const { join } = path;
+
+// Build the test workspace with the Nx version this repo is on, so results
+// don't change whenever a new Nx is published
+const nxVersion: string = require('nx/package.json').version;
+const prettierVersion: string = require('prettier/package.json').version;
+const createNxWorkspaceBin = join(
+  path.dirname(require.resolve('create-nx-workspace/package.json')),
+  require('create-nx-workspace/package.json').bin['create-nx-workspace'],
+);
+
+const keepWorkspace = process.env.E2E_KEEP_WORKSPACE === 'true';
+
 describe('helm', () => {
+  let tmpDirectory: string;
   let workspaceDirectory: string;
   let projectDirectory: string;
-  let registryContainer: StartedTestContainer;
+  // Depends on the workspace layout create-nx-workspace picks (e.g. @org/test-project)
+  let projectName: string;
+  let registryContainer: StartedTestContainer | undefined;
+  let chartRepository: ChildProcess | undefined;
+  let remote: string;
+  let chartRepositoryUrl: string;
+
+  // The steps build on each other, so stop at the first failure instead of
+  // reporting every later step as failed too
+  let failedStep: string | undefined;
+  const step = (name: string, fn: () => void | Promise<void>) =>
+    it(
+      name,
+      async () => {
+        if (failedStep) {
+          throw new Error(`Skipped because "${failedStep}" failed`);
+        }
+        try {
+          await fn();
+        } catch (error) {
+          failedStep = name;
+          throw error;
+        }
+      },
+      180_000,
+    );
 
   beforeAll(async () => {
-    registryContainer = await new GenericContainer('registry:2.7')
-      .withExposedPorts({
-        container: 5000,
-        host: 5000,
-      })
-      .start();
+    tmpDirectory = mkdtempSync(join(tmpdir(), 'helm-e2e-'));
 
-    workspaceDirectory = createTestWorkspace();
+    registryContainer = await new GenericContainer('registry:3')
+      .withExposedPorts(5000)
+      .start();
+    remote = `oci://${registryContainer.getHost()}:${registryContainer.getMappedPort(5000)}/helm-charts`;
+
+    let port: number;
+    ({ server: chartRepository, port } =
+      await startChartRepository(tmpDirectory));
+    chartRepositoryUrl = `http://127.0.0.1:${port}`;
+    publishDependencyChart(tmpDirectory, chartRepositoryUrl);
+
+    workspaceDirectory = createTestWorkspace(tmpDirectory);
     projectDirectory = createTestProject(workspaceDirectory);
+    projectName = findProjectName(workspaceDirectory);
 
     // The plugin has been built and published to a local registry in the jest globalSetup
     // Install the plugin built with the latest source code into the test repo
-    execSync(`npm install @nx-extensions/helm@e2e`, {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-      env: process.env,
-    });
-  }, 120_000);
+    run(`npm install @nx-extensions/helm@e2e`, workspaceDirectory);
+  }, 300_000);
 
   afterAll(async () => {
-    await registryContainer.stop();
-    // Cleanup the test project
-    rmSync(workspaceDirectory, {
-      recursive: true,
-      force: true,
-    });
+    try {
+      chartRepository?.kill();
+      await registryContainer?.stop();
+    } finally {
+      if (keepWorkspace || failedStep) {
+        console.log(`Keeping the test workspace in "${tmpDirectory}"`);
+      } else if (tmpDirectory) {
+        rmSync(tmpDirectory, { recursive: true, force: true });
+      }
+    }
   }, 120_000);
 
-  it('should be installed', () => {
+  step('should be installed', () => {
     // npm ls will fail if the package is not installed properly
-    execSync('npm ls @nx-extensions/helm', {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-    });
+    run('npm ls @nx-extensions/helm', workspaceDirectory);
   });
 
-  it('should generate a chart', () => {
-    execSync(
-      `nx generate @nx-extensions/helm:chart --name=my-chart --project=@org/test-project --no-interactive`,
-      {
-        cwd: workspaceDirectory,
-        stdio: 'inherit',
-        env: { ...process.env, NX_DAEMON: 'false' },
-      },
+  step('should install the published package layout', () => {
+    const packageRoot = join(
+      workspaceDirectory,
+      'node_modules',
+      '@nx-extensions',
+      'helm',
+    );
+    const manifest = JSON.parse(
+      readFileSync(join(packageRoot, 'package.json'), 'utf8'),
+    );
+
+    expect(existsSync(join(packageRoot, manifest.typings))).toBe(true);
+    expect(existsSync(join(packageRoot, 'README.md'))).toBe(true);
+  });
+
+  step('should generate a chart', () => {
+    run(
+      `npx nx generate @nx-extensions/helm:chart --name=my-chart --project=${projectName} --no-interactive`,
+      workspaceDirectory,
     );
 
     // Generated files are formatted with the workspace prettier config (which
@@ -72,120 +132,200 @@ describe('helm', () => {
     ).toContain('/apps/test-project/chart/templates');
 
     // Reset Nx cache after modifying project configuration
-    execSync('nx reset', {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-    });
+    run('npx nx reset', workspaceDirectory);
   });
 
-  it('should package a chart', () => {
-    execSync(`nx run @org/test-project:helm`, {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-    });
+  step('should package a chart', () => {
+    run(`npx nx run ${projectName}:helm`, workspaceDirectory);
   });
 
-  it('should package and push a chart', () => {
-    execSync(`nx run @org/test-project:helm --push --plainHttp`, {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-    });
+  step('should package and push a chart', () => {
+    run(
+      `npx nx run ${projectName}:helm --push --plainHttp --remote=${remote}`,
+      workspaceDirectory,
+    );
   });
 
-  it('should add a dependency to a chart', () => {
-    execSync(
-      `nx generate @nx-extensions/helm:dependency --project=@org/test-project --chartName=nginx --chartVersion=18.1.7 --repository=https://charts.bitnami.com/bitnami --repositoryName=bitnami --no-interactive`,
-      {
-        cwd: workspaceDirectory,
-        stdio: 'inherit',
-        env: { ...process.env, NX_DAEMON: 'false' },
-      },
+  step('should add a dependency to a chart', () => {
+    run(
+      `npx nx generate @nx-extensions/helm:dependency --project=${projectName} --chartName=e2e-dependency --chartVersion=0.1.0 --repository=${chartRepositoryUrl} --repositoryName=e2e --no-interactive`,
+      workspaceDirectory,
     );
 
     // Reset Nx cache after modifying project configuration
-    execSync('nx reset', {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-    });
+    run('npx nx reset', workspaceDirectory);
   });
 
-  it('should package and push a chart with dependencies', () => {
-    execSync(`nx run @org/test-project:helm --push --plainHttp`, {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-    });
+  step('should package and push a chart with dependencies', () => {
+    run(
+      `npx nx run ${projectName}:helm --push --plainHttp --remote=${remote}`,
+      workspaceDirectory,
+    );
   });
+
+  // The executor resolves paths against the cwd instead of the workspace root
+  it.failing(
+    'should package a chart when run from the project folder',
+    () => {
+      if (failedStep) {
+        throw new Error(`Skipped because "${failedStep}" failed`);
+      }
+      run(`npx nx run ${projectName}:helm`, projectDirectory);
+    },
+    180_000,
+  );
+
+  /**
+   * Runs a command with a minimal environment: no CI secrets, Nx Cloud off, and
+   * Helm config, cache and data kept inside the test directory so the user's
+   * Helm repositories are never touched.
+   */
+  function run(command: string, cwd: string) {
+    execSync(command, { cwd, stdio: 'inherit', env: testEnv() });
+  }
+
+  function testEnv(): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {};
+    for (const [key, value] of Object.entries(process.env)) {
+      if (
+        /^(PATH|HOME|USER|LANG|LC_\w+|TERM|TMPDIR|SHELL|CI)$/.test(key) ||
+        // npm_config_registry points npm at the local verdaccio registry
+        /^npm_config_/i.test(key)
+      ) {
+        env[key] = value;
+      }
+    }
+
+    const helmHome = join(tmpDirectory, 'helm');
+    return {
+      ...env,
+      NX_DAEMON: 'false',
+      NX_NO_CLOUD: 'true',
+      HELM_CONFIG_HOME: join(helmHome, 'config'),
+      HELM_CACHE_HOME: join(helmHome, 'cache'),
+      HELM_DATA_HOME: join(helmHome, 'data'),
+    };
+  }
+
+  /**
+   * Creates a test workspace with the repo's own create-nx-workspace
+   *
+   * @returns The directory where the test workspace was created
+   */
+  function createTestWorkspace(parentDirectory: string) {
+    const workspaceName = 'test-workspace';
+
+    run(
+      `node ${createNxWorkspaceBin} ${workspaceName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
+      parentDirectory,
+    );
+    const directory = join(parentDirectory, workspaceName);
+
+    // The template workspace has no formatter; use prettier so the e2e run
+    // covers the generator's formatting and .prettierignore handling
+    run(`npm install --save-dev prettier@${prettierVersion}`, directory);
+    writeFileSync(join(directory, '.prettierrc'), '{}\n');
+
+    console.log(`Created test workspace in "${directory}"`);
+
+    return directory;
+  }
+
+  /**
+   * Creates a test project in the test workspace
+   *
+   * @returns The directory where the test project was created
+   */
+  function createTestProject(workspace: string) {
+    const directory = join(workspace, 'apps', 'test-project');
+
+    // Create a new express application
+    run(`npm install @nx/node@${nxVersion}`, workspace);
+    run(
+      `npx nx generate @nx/node:application test-project --directory=apps/test-project --nxCloud=skip --no-interactive`,
+      workspace,
+    );
+
+    console.log(`Created test project in "${directory}"`);
+
+    return directory;
+  }
+
+  function findProjectName(workspace: string): string {
+    const projects: string[] = JSON.parse(
+      execSync('npx nx show projects --json', {
+        cwd: workspace,
+        env: testEnv(),
+        encoding: 'utf8',
+      }),
+    );
+    const project = projects.find((name) => name.endsWith('test-project'));
+    if (!project) {
+      throw new Error(`No test project in ${JSON.stringify(projects)}`);
+    }
+    return project;
+  }
+
+  /**
+   * Packages a small chart into a local chart repository for the dependency
+   * test.
+   */
+  function publishDependencyChart(parentDirectory: string, url: string) {
+    const source = join(parentDirectory, 'dependency-source');
+    mkdirSync(source, { recursive: true });
+    run('helm create e2e-dependency', source);
+    run(
+      `helm package e2e-dependency -d ${join(parentDirectory, 'chart-repository')}`,
+      source,
+    );
+    run(
+      `helm repo index . --url ${url}`,
+      join(parentDirectory, 'chart-repository'),
+    );
+  }
 });
 
 /**
- * Creates a test workspace with create-nx-workspace
- *
- * @returns The directory where the test workspace was created
+ * Serves `<directory>/chart-repository` as a classic Helm chart repository. It
+ * runs in its own process because the test steps block this one with execSync,
+ * which would stop an in-process server from answering.
  */
-function createTestWorkspace() {
-  const workspaceName = 'test-workspace';
-  const workspaceDirectory = join(workspaceRoot, 'tmp', workspaceName);
+async function startChartRepository(
+  directory: string,
+): Promise<{ server: ChildProcess; port: number }> {
+  const root = join(directory, 'chart-repository');
+  mkdirSync(root, { recursive: true });
 
-  // Ensure workspaceDirectory is empty
-  rmSync(workspaceDirectory, {
-    recursive: true,
-    force: true,
+  const script = `
+    const { createServer } = require('node:http');
+    const { existsSync, readFileSync } = require('node:fs');
+    const { basename, join } = require('node:path');
+    const root = process.argv[1];
+    const server = createServer((request, response) => {
+      const file = join(root, basename(request.url ?? ''));
+      if (!existsSync(file)) return response.writeHead(404).end();
+      response.writeHead(200).end(readFileSync(file));
+    });
+    // A string, so FORCE_COLOR (set by jest) doesn't add color codes
+    server.listen(0, '127.0.0.1', () => console.log(String(server.address().port)));
+  `;
+  const server = spawn(process.execPath, ['-e', script, root], {
+    stdio: ['ignore', 'pipe', 'inherit'],
   });
 
-  mkdirSync(dirname(workspaceDirectory), {
-    recursive: true,
+  const port = await new Promise<number>((resolve, reject) => {
+    let output = '';
+    server.once('error', reject);
+    server.once('exit', (code) =>
+      reject(new Error(`Chart repository exited (${code}): ${output}`)),
+    );
+    server.stdout?.on('data', (data) => {
+      output += String(data);
+      const match = output.match(/^(\d+)$/m);
+      if (match) {
+        resolve(Number(match[1]));
+      }
+    });
   });
-
-  // Create a new Nx workspace
-  execSync(
-    `npx --yes create-nx-workspace@latest ${workspaceName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
-    {
-      cwd: dirname(workspaceDirectory),
-      stdio: 'inherit',
-      env: process.env,
-    },
-  );
-
-  // The template workspace has no formatter; use prettier so the e2e run
-  // covers the generator's formatting and .prettierignore handling
-  execSync(`npm install --save-dev prettier`, {
-    cwd: workspaceDirectory,
-    stdio: 'inherit',
-    env: process.env,
-  });
-  writeFileSync(join(workspaceDirectory, '.prettierrc'), '{}\n');
-
-  console.log(`Created test workspace in "${workspaceDirectory}"`);
-
-  return workspaceDirectory;
-}
-
-/**
- * Creates a test project in the test workspace
- *
- * @returns The directory where the test project was created
- */
-function createTestProject(workspaceDirectory: string) {
-  const projectName = 'test-project';
-  const projectDirectory = join(workspaceDirectory, 'apps', projectName);
-
-  // Create a new express application
-  execSync(`npm install @nx/node`, {
-    cwd: workspaceDirectory,
-    stdio: 'inherit',
-    env: process.env,
-  });
-
-  execSync(
-    `npx nx generate @nx/node:application ${projectName} --directory=apps/${projectName} --nxCloud=skip --no-interactive`,
-    {
-      cwd: workspaceDirectory,
-      stdio: 'inherit',
-      env: process.env,
-    },
-  );
-
-  console.log(`Created test project in "${projectDirectory}"`);
-
-  return projectDirectory;
+  return { server, port };
 }

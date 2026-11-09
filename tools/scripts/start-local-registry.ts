@@ -2,19 +2,21 @@
  * This script starts a local registry for e2e testing purposes. It is meant to
  * be called in jest's globalSetup.
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { workspaceRoot } from '@nx/devkit';
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
 import { releasePublish, releaseVersion } from 'nx/release';
-import { getExecOutput } from '@actions/exec';
+
+import stopLocalRegistry from './stop-local-registry';
 
 export default async () => {
   // local registry target to run
   const localRegistryTarget = '@nx-extensions/source:local-registry';
   // storage folder for the local registry
-  const storage = './tmp/local-registry/storage';
+  const storage = join(workspaceRoot, 'tmp', 'local-registry', 'storage');
 
   global.stopLocalRegistry = await startLocalRegistry({
     localRegistryTarget,
@@ -35,27 +37,32 @@ export default async () => {
       .map((manifest) => [manifest, readFileSync(manifest, 'utf8')]),
   );
 
-  await releaseVersion({
-    specifier: '0.0.0-e2e',
-    stageChanges: false,
-    gitCommit: false,
-    gitTag: false,
-    firstRelease: true,
-    versionActionsOptionsOverrides: {
-      skipLockFileUpdate: true,
-    },
-  });
+  try {
+    await releaseVersion({
+      specifier: '0.0.0-e2e',
+      stageChanges: false,
+      gitCommit: false,
+      gitTag: false,
+      firstRelease: true,
+      versionActionsOptionsOverrides: {
+        skipLockFileUpdate: true,
+      },
+    });
 
-  // Build all the projects with the new e2e version
-  const { stdout: buildOutput } = await getExecOutput('nx', [
-    'run-many',
-    '--target=build',
-    '--all',
-  ]);
+    // Build the published projects with the e2e version, from the workspace
+    // root like CI does, so the published layout matches a real release
+    execFileSync('npx', ['nx', 'run-many', '-t', 'build', '-p', 'helm,core'], {
+      cwd: workspaceRoot,
+      stdio: 'inherit',
+    });
 
-  console.log(buildOutput);
-
-  await releasePublish({
-    tag: 'e2e',
-  });
+    await releasePublish({
+      tag: 'e2e',
+    });
+  } catch (error) {
+    // Jest skips globalTeardown when globalSetup fails, so undo the manifest
+    // changes and stop the registry (which removes its npm auth token) here
+    stopLocalRegistry();
+    throw error;
+  }
 };
