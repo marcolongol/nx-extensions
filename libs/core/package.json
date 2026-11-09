@@ -19,5 +19,11 @@
   "typings": "./src/index.d.ts",
   "peerDependencies": {
     "@nx/devkit": ">=22 <25"
-  }
+  },
+  "description": "Shared utilities for the @nx-extensions Nx plugins",
+  "license": "MIT",
+  "keywords": [
+    "nx",
+    "nx-plugin"
+  ]
 }

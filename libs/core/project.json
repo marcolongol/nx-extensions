@@ -19,7 +19,18 @@
         "outputPath": "dist/libs/core",
         "main": "libs/core/src/index.ts",
         "tsConfig": "libs/core/tsconfig.lib.json",
-        "assets": ["libs/core/*.md"]
+        "assets": [
+          {
+            "input": "./libs/core",
+            "glob": "*.md",
+            "output": "."
+          },
+          {
+            "input": ".",
+            "glob": "LICENSE",
+            "output": "."
+          }
+        ]
       }
     },
     "nx-release-publish": {
