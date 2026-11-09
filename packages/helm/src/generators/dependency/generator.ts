@@ -9,11 +9,15 @@ import { isPathInside } from '@nx-extensions/core';
 import { isMap, isSeq, parseDocument } from 'yaml';
 
 import { DependencyGeneratorSchema } from './schema.d';
+import { checkRepositoryUrl } from '../../utils/repository';
 
 export async function dependencyGenerator(
   tree: Tree,
   options: DependencyGeneratorSchema,
 ) {
+  // Rejects credentials in the URL and warns about plain HTTP
+  checkRepositoryUrl(options.repository);
+
   const project = readProjectConfiguration(tree, options.project);
 
   if (!project.targets?.helm) {

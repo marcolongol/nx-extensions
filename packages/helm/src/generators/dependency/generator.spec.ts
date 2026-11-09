@@ -129,6 +129,15 @@ describe('dependency generator', () => {
     );
   });
 
+  it('should reject credentials in the repository URL', async () => {
+    await expect(
+      dependencyGenerator(tree, {
+        ...options,
+        repository: 'https://ci:s3cret@charts.example.com',
+      }),
+    ).rejects.toThrow('contains credentials');
+  });
+
   it('should require a helm target', async () => {
     addProjectConfiguration(tree, 'no-helm', { root: 'apps/no-helm' });
 
