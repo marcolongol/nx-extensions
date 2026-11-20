@@ -235,7 +235,7 @@ importers:
         version: 2.32.0(@typescript-eslint/parser@8.72.1(eslint@9.39.5(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint-import-resolver-typescript@4.4.5)(eslint@9.39.5(supports-color@8.1.1))(supports-color@8.1.1)
       eslint-plugin-prettier:
         specifier: ^5.1.3
-        version: 5.5.7(eslint-config-prettier@10.1.8(eslint@9.39.5(supports-color@8.1.1)))(eslint@9.39.5(supports-color@8.1.1))(prettier@3.9.10)
+        version: 5.5.7(eslint-config-prettier@10.1.8(eslint@9.39.5(supports-color@8.1.1)))(eslint@9.39.5(supports-color@8.1.1))(prettier@3.10.1)
       eslint-plugin-sort-class-members:
         specifier: ^1.20.0
         version: 1.22.1(eslint@9.39.5(supports-color@8.1.1))
@@ -262,16 +262,16 @@ importers:
         version: 24.0.5(@swc-node/register@1.12.1(@swc/core@1.16.22(@swc/helpers@0.5.24))(@swc/types@0.1.28)(supports-color@8.1.1)(typescript@6.0.3))(@swc/core@1.16.22(@swc/helpers@0.5.24))
       prettier:
         specifier: ^3.0.0
-        version: 3.9.10
+        version: 3.10.1
       prettier-plugin-jsdoc:
         specifier: ^1.3.0
-        version: 1.8.1(prettier@3.9.10)(supports-color@8.1.1)
+        version: 1.8.1(prettier@3.10.1)(supports-color@8.1.1)
       prettier-plugin-organize-attributes:
         specifier: ^1.0.0
-        version: 1.0.0(prettier@3.9.10)
+        version: 1.0.0(prettier@3.10.1)
       prettier-plugin-package:
         specifier: ^2.0.0
-        version: 2.0.0(prettier@3.9.10)
+        version: 2.0.0(prettier@3.10.1)
       testcontainers:
         specifier: ^12.2.1
         version: 12.2.1(bare-buffer@3.7.1)(supports-color@8.1.1)
@@ -4806,8 +4806,8 @@ packages:
     peerDependencies:
       prettier: ^3.0.0
 
-  prettier@3.9.10:
-    resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
+  prettier@3.10.1:
+    resolution: {integrity: sha512-70vp3ZUYoPlFbF9uiTdXHUUCGEIp7d4+6p+8DYbkm2jP7x/3i/paXVF6dopSI3zd/CEitrZN1rc4i85xWmmXlg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -9204,10 +9204,10 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-prettier@5.5.7(eslint-config-prettier@10.1.8(eslint@9.39.5(supports-color@8.1.1)))(eslint@9.39.5(supports-color@8.1.1))(prettier@3.9.10):
+  eslint-plugin-prettier@5.5.7(eslint-config-prettier@10.1.8(eslint@9.39.5(supports-color@8.1.1)))(eslint@9.39.5(supports-color@8.1.1))(prettier@3.10.1):
     dependencies:
       eslint: 9.39.5(supports-color@8.1.1)
-      prettier: 3.9.10
+      prettier: 3.10.1
       prettier-linter-helpers: 1.0.1
       synckit: 0.12.3
     optionalDependencies:
@@ -11169,24 +11169,24 @@ snapshots:
     dependencies:
       fast-diff: 1.3.0
 
-  prettier-plugin-jsdoc@1.8.1(prettier@3.9.10)(supports-color@8.1.1):
+  prettier-plugin-jsdoc@1.8.1(prettier@3.10.1)(supports-color@8.1.1):
     dependencies:
       binary-searching: 2.0.5
       comment-parser: 1.4.9
       mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
-      prettier: 3.9.10
+      prettier: 3.10.1
     transitivePeerDependencies:
       - supports-color
 
-  prettier-plugin-organize-attributes@1.0.0(prettier@3.9.10):
+  prettier-plugin-organize-attributes@1.0.0(prettier@3.10.1):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
 
-  prettier-plugin-package@2.0.0(prettier@3.9.10):
+  prettier-plugin-package@2.0.0(prettier@3.10.1):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
 
-  prettier@3.9.10: {}
+  prettier@3.10.1: {}
 
   pretty-format@30.5.1:
     dependencies:
